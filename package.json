@@ -3,6 +3,16 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+
+  "homepage": "https://rtwwnmar.github.io/mydigipin1-pwa",
+"scripts": {
+  "dev": "vite",
+  "build": "tsc -b && vite build",
+  "lint": "eslint .",
+  "preview": "vite preview",
+  "predeploy": "npm run build",
+  "deploy": "gh-pages -d dist"
+}
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -17,11 +27,13 @@
     "react-leaflet": "^5.0.0"
   },
   "devDependencies": {
+    "gh-pages": "^6.1.1",
     "@eslint/js": "^9.33.0",
     "@types/node": "^24.2.1",
     "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
     "@vitejs/plugin-react": "^5.0.0",
+
     "eslint": "^9.33.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
