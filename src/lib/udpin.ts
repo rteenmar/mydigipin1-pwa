@@ -7,11 +7,13 @@
  */
 
 // DIGIPIN Labelling Grid as per official specification
+// Rows represent latitude divisions (0 = north, 3 = south)
+// Columns represent longitude divisions (0 = west, 3 = east)
 const DIGIPIN_GRID = [
-  ['F', 'C', '9', '8'],
+  ['F', 'C', '9', '8'], // Northmost row
   ['J', '3', '2', '7'],
   ['K', '4', '5', '6'],
-  ['L', 'M', 'P', 'T']
+  ['L', 'M', 'P', 'T']  // Southmost row
 ];
 
 // Bounding Box for India (for 10-character DIGIPIN)
@@ -65,45 +67,37 @@ export function generateUDPIN(lat: number, lng: number): string {
   // For each digit in the DIGIPIN
   for (let level = 1; level <= digits; level++) {
     // Calculate the size of each division at this level
-    const latDivDeg = (maxLat - minLat) / 4;
-    const lngDivDeg = (maxLng - minLng) / 4;
+    const latDiv = (maxLat - minLat) / 4;
+    const lngDiv = (maxLng - minLng) / 4;
     
-    // Find the row (latitude division)
+    // Find the row (latitude division) - 0 = north, 3 = south
     let row = 0;
-    let nextLvlMaxLat = maxLat;
-    let nextLvlMinLat = maxLat - latDivDeg;
-    
     for (let i = 0; i < 4; i++) {
-      if ((i === 3 || lat >= nextLvlMinLat) && (i === 0 || lat < nextLvlMaxLat)) {
+      const latBoundary = maxLat - (i * latDiv);
+      if (lat >= (latBoundary - latDiv)) {
         row = i;
         break;
       }
-      nextLvlMaxLat = nextLvlMinLat;
-      nextLvlMinLat = nextLvlMaxLat - latDivDeg;
     }
     
-    // Find the column (longitude division)
+    // Find the column (longitude division) - 0 = west, 3 = east
     let col = 0;
-    let nextLvlMinLng = minLng;
-    let nextLvlMaxLng = minLng + lngDivDeg;
-    
     for (let i = 0; i < 4; i++) {
-      if ((i === 3 || lng < nextLvlMaxLng) && (i === 0 || lng >= nextLvlMinLng)) {
+      const lngBoundary = minLng + ((i + 1) * lngDiv);
+      if (lng < lngBoundary) {
         col = i;
         break;
       }
-      nextLvlMinLng = nextLvlMaxLng;
-      nextLvlMaxLng = nextLvlMinLng + lngDivDeg;
     }
     
-    // Add the character to the DIGIPIN
+    // Add the character to the DIGIPIN from the grid
     udpin += DIGIPIN_GRID[row][col];
     
     // Update bounds for the next level
-    minLat = nextLvlMinLat;
-    maxLat = nextLvlMaxLat;
-    minLng = nextLvlMinLng;
-    maxLng = nextLvlMaxLng;
+    minLat = maxLat - ((row + 1) * latDiv);
+    maxLat = maxLat - (row * latDiv);
+    minLng = minLng + (col * lngDiv);
+    maxLng = minLng + lngDiv;
     
     // Add hyphens for better readability
     if (isIndia) {

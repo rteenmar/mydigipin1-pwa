@@ -1,11 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
-import type { LatLngTuple, Map } from 'leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
 import { generateUDPIN, decodeUDPIN, formatUDPIN } from './lib/udpin';
-import { geocodeAddress, reverseGeocode, formatCoordinates } from './lib/geocoding';
-import { saveLocation, getSavedLocations, deleteLocation, type SavedLocation } from './lib/locationStorage';
-import type { AppState } from './types';
-import React from 'react';
+import { geocodeAddress, reverseGeocode } from './lib/geocoding';
+import { getSavedLocations } from './lib/locationStorage';
 import 'leaflet/dist/leaflet.css';
 import './App.css';
 
@@ -24,22 +21,52 @@ Icon.Default.mergeOptions({
 });
 
 // Default center (India)
-const DEFAULT_CENTER: LatLngTuple = [20.5937, 78.9629];
-const ZOOM_LEVEL = 5;
+const DEFAULT_CENTER: [number, number] = [20.5937, 78.9629];
 
-// Component to handle map click events
-function MapClickHandler({ onMapClick }: { onMapClick: (lat: number, lng: number) => void }) {
+// Component to handle map click events and center updates
+function MapClickHandler({ onMapClick, center }: { onMapClick: (lat: number, lng: number) => void, center: [number, number] }) {
+  const map = useMap();
+  
+  // Update map view when center changes
+  useEffect(() => {
+    if (center) {
+      map.setView(center, map.getZoom());
+    }
+  }, [center, map]);
+
+  // Handle map click events
   useMapEvents({
     click: (e) => {
       onMapClick(e.latlng.lat, e.latlng.lng);
     },
   });
+  
   return null;
 }
 
+// Define the AppState type
+type AppState = {
+  name: string;
+  phone: string;
+  lat: number | null;
+  lng: number | null;
+  address: string;
+  myLocation: string;
+  udpin: string;
+  isGeoLocationLoading: boolean;
+  isGeoLocationError: boolean;
+  isCopyFromGeoLocation: boolean;
+  savedLocations: any[];
+  isMapReady: boolean;
+  mapKey: number;
+  isGeolocating: boolean;
+  isSearching: boolean;
+  showSavedLocations: boolean;
+};
+
 function App() {
-  // Initialize state without loading saved locations initially
-  const [state, setState] = useState<AppState>(() => ({
+  // Initialize state
+  const [state, setState] = useState<AppState>({
     name: '',
     phone: '',
     lat: null,
@@ -50,13 +77,13 @@ function App() {
     isGeoLocationLoading: false,
     isGeoLocationError: false,
     isCopyFromGeoLocation: false,
-    savedLocations: [], // Start with empty array, will load in useEffect
+    savedLocations: [],
     isMapReady: false,
     mapKey: 0,
     isGeolocating: false,
     isSearching: false,
     showSavedLocations: false
-  }));
+  });
 
   // Load saved locations on component mount
   useEffect(() => {
@@ -66,160 +93,168 @@ function App() {
       savedLocations: saved
     }));
   }, []);
+
+  // Map zoom level constant
+  const ZOOM_LEVEL = 5;
   
-  // Save current location
-  const handleSaveLocation = useCallback(() => {
-    if (state.lat === null || state.lng === null) return;
+  // Default map center
+  const [mapCenter, setMapCenter] = useState<[number, number]>(DEFAULT_CENTER);
 
-    const location = {
-      name: state.myLocation || 'My Location',
-      lat: state.lat,
-      lng: state.lng,
-      address: state.address,
-      udpin: state.udpin
-    };
-
-    // Use the saveLocation function from locationStorage
-    const success = saveLocation(location);
-    
-    if (success) {
-      // Refresh the saved locations from localStorage to ensure consistency
-      const updatedLocations = getSavedLocations();
-      setState(prev => ({
-        ...prev,
-        savedLocations: updatedLocations
-      }));
-    } else {
-      // The saveLocation function will handle showing appropriate error messages
-      // for duplicates or max limit reached
-      const currentLocations = getSavedLocations();
-      const isDuplicate = currentLocations.some(loc => 
-        loc.lat === location.lat && loc.lng === location.lng
-      );
-      
-      if (isDuplicate) {
-        alert('This location is already saved.');
-      } else if (currentLocations.length >= 10) {
-        alert('Maximum of 10 saved locations reached. Please delete some before adding more.');
-      }
-    }
-  }, [state.lat, state.lng, state.myLocation, state.address, state.udpin]);
-
-  // Load a saved location
-  const loadLocation = useCallback((location: SavedLocation) => {
+  // Handle map click
+  const handleMapClick = (lat: number, lng: number) => {
     setState(prev => ({
       ...prev,
-      lat: location.lat,
-      lng: location.lng,
-      address: location.address,
-      myLocation: location.name,
-      udpin: location.udpin || generateUDPIN(location.lat, location.lng),
-      // Force map update by changing the key
-      mapKey: Date.now()
+      lat,
+      lng
     }));
-  }, []);
+    setMapCenter([lat, lng]);
+  };
 
-  // Handle deleting a saved location
-  const handleDeleteLocation = useCallback((id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (window.confirm('Are you sure you want to delete this location?')) {
-      // Delete from localStorage and get the updated list
-      const updatedLocations = getSavedLocations().filter(loc => loc.id !== id);
-      
-      // Update state with the filtered list
+  // Handle search address
+  const handleSearchAddress = async () => {
+    if (!state.address.trim()) return;
+    
+    try {
+      const coords = await geocodeAddress(state.address);
+      if (coords) {
+        setState(prev => ({
+          ...prev,
+          lat: coords.lat,
+          lng: coords.lng,
+          isSearching: false
+        }));
+      }
+    } catch (error) {
+      console.error('Error searching address:', error);
+    }
+  };
+
+  // Update from UDPIN
+  const updateFromUDPIN = (udpin: string) => {
+    try {
+      const { lat, lng } = decodeUDPIN(udpin);
       setState(prev => ({
         ...prev,
-        savedLocations: updatedLocations
+        lat,
+        lng,
+        udpin: formatUDPIN(udpin)
       }));
-      
-      // Also update localStorage
-      localStorage.setItem('savedLocations', JSON.stringify(updatedLocations));
+    } catch (error) {
+      console.error('Error decoding UDPIN:', error);
     }
-  }, []);
+  };
 
-  // Update UDPIN when coordinates change
+  // Save location to local storage
+  const saveLocationToStorage = (location: any) => {
+    const saved = getSavedLocations();
+    saved.push(location);
+    localStorage.setItem('savedLocations', JSON.stringify(saved));
+    return saved;
+  };
+
+  // Save location
+  const handleSaveLocation = () => {
+    if (state.lat === null || state.lng === null) return;
+    
+    const newLocation = {
+      id: Date.now().toString(),
+      name: state.name || 'Unnamed Location',
+      address: state.address,
+      lat: state.lat,
+      lng: state.lng,
+      udpin: state.udpin,
+      myLocation: state.myLocation,
+      phone: state.phone,
+      timestamp: new Date().toISOString()
+    };
+    
+    saveLocationToStorage(newLocation);
+    setState(prev => ({
+      ...prev,
+      savedLocations: [...prev.savedLocations, newLocation]
+    }));
+  };
+
+  // Load location from saved locations
+  const loadLocation = (location: any) => {
+    setState(prev => ({
+      ...prev,
+      ...location,
+      isCopyFromGeoLocation: false
+    }));
+  };
+
+  // Delete location
+  const handleDeleteLocation = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const updatedLocations = state.savedLocations.filter(loc => loc.id !== id);
+    localStorage.setItem('savedLocations', JSON.stringify(updatedLocations));
+    setState(prev => ({
+      ...prev,
+      savedLocations: updatedLocations
+    }));
+  };
+
+  // Open in maps
+  const openInMaps = () => {
+    if (state.lat === null || state.lng === null) return;
+    window.open(`https://www.google.com/maps?q=${state.lat},${state.lng}`, '_blank');
+  };
+
+  // Share location
+  const shareLocation = async () => {
+    if (state.lat === null || state.lng === null) return;
+    
+    const shareData = {
+      title: 'My Location',
+      text: `Check out this location: ${state.address || 'My Location'}`,
+      url: `https://www.google.com/maps?q=${state.lat},${state.lng}`
+    };
+    
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(shareData.url);
+        alert('Link copied to clipboard!');
+      }
+    } catch (err) {
+      console.error('Error sharing:', err);
+    }
+  };
+
+  // Print location
+  const printLocation = () => {
+    window.print();
+  };
+
+  // Update map center and UDPIN when coordinates change
   useEffect(() => {
     if (state.lat !== null && state.lng !== null) {
+      setMapCenter([state.lat, state.lng]);
+      
+      // Generate UDPIN when coordinates change
       try {
         const newUDPIN = generateUDPIN(state.lat, state.lng);
-        const formattedUDPIN = formatUDPIN(newUDPIN);
-        
-        // Only update if the UDPIN has actually changed to avoid infinite loops
-        setState(prev => {
-          if (prev.udpin !== formattedUDPIN) {
-            return { ...prev, udpin: formattedUDPIN };
-          }
-          return prev;
-        });
+        setState(prev => ({
+          ...prev,
+          udpin: formatUDPIN(newUDPIN)
+        }));
       } catch (error) {
         console.error('Error generating UDPIN:', error);
       }
     }
   }, [state.lat, state.lng]);
 
-  // Update address when coordinates change
-  useEffect(() => {
-    if (state.lat !== null && state.lng !== null) {
-      updateAddress(state.lat, state.lng);
-    }
-  }, [state.lat, state.lng]);
 
-  // Update My Location when address changes and copy is enabled
-  useEffect(() => {
-    if (state.isCopyFromGeoLocation && state.address) {
-      setState(prev => ({
-        ...prev,
-        myLocation: prev.address
-      }));
-    }
-  }, [state.address, state.isCopyFromGeoLocation]);
   
-  // Clear My Location when copy is disabled
-  useEffect(() => {
-    if (!state.isCopyFromGeoLocation && state.myLocation === state.address) {
-      setState(prev => ({
-        ...prev,
-        myLocation: ''
-      }));
-    }
-  }, [state.isCopyFromGeoLocation, state.myLocation, state.address]);
-
-  // Update coordinates from UDPIN
-  const updateFromUDPIN = useCallback((inputUDPIN: string) => {
-    try {
-      // Clean the input and format it properly
-      const cleanUDPIN = inputUDPIN.replace(/-/g, '').toUpperCase();
-      if (!cleanUDPIN) return;
-      
-      // Decode the UDPIN to get coordinates
-      const coords = decodeUDPIN(cleanUDPIN);
-      
-      // Generate a fresh UDPIN from the decoded coordinates to ensure consistency
-      const formattedUDPIN = generateUDPIN(coords.lat, coords.lng);
-      
-      setState(prev => ({
-        ...prev,
-        lat: coords.lat,
-        lng: coords.lng,
-        udpin: formatUDPIN(formattedUDPIN)
-      }));
-    } catch (error) {
-      console.error('Invalid UDPIN:', error);
-      // Keep the existing UDPIN value if the new one is invalid
-      setState(prev => ({
-        ...prev,
-        udpin: formatUDPIN(prev.udpin) // Re-format existing UDPIN to ensure consistency
-      }));
-    }
-  }, []);
-
-  // Update address from coordinates
-  const updateAddress = async (lat: number, lng: number) => {
+  // Memoize updateAddress to prevent infinite re-renders
+  const updateLocation = useCallback(async (lat: number, lng: number) => {
     try {
       const address = await reverseGeocode(lat, lng);
       setState(prev => ({
         ...prev,
-        address,
+        address: address || prev.address,
         isGeoLocationLoading: false,
         isGeoLocationError: false
       }));
@@ -231,7 +266,14 @@ function App() {
         isGeoLocationError: true
       }));
     }
-  };
+  }, []);
+
+  // Call updateLocation when coordinates change
+  useEffect(() => {
+    if (state.lat !== null && state.lng !== null) {
+      updateLocation(state.lat, state.lng);
+    }
+  }, [state.lat, state.lng, updateLocation]);
 
   // Handle find my location
   const handleFindMyLocation = () => {
@@ -245,15 +287,15 @@ function App() {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
-        
+
         try {
           // Generate UDPIN from the new coordinates
           const newUDPIN = generateUDPIN(latitude, longitude);
           const formattedUDPIN = formatUDPIN(newUDPIN);
-          
+
           // Get the address for the new coordinates
           const address = await reverseGeocode(latitude, longitude);
-          
+
           setState(prev => ({
             ...prev,
             lat: latitude,
@@ -284,126 +326,6 @@ function App() {
     );
   };
 
-  // Handle search by address
-  const handleSearchAddress = async () => {
-    if (!state.address.trim()) return;
-    
-    setState(prev => ({ ...prev, isGeoLocationLoading: true, isGeoLocationError: false }));
-    
-    const coords = await geocodeAddress(state.address);
-    if (coords) {
-      setState(prev => ({
-        ...prev,
-        lat: coords.lat,
-        lng: coords.lng,
-        isGeoLocationLoading: false
-      }));
-    } else {
-      setState(prev => ({
-        ...prev,
-        isGeoLocationLoading: false,
-        isGeoLocationError: true
-      }));
-    }
-  };
-
-  // Handle map click
-  const handleMapClick = useCallback((lat: number, lng: number) => {
-    setState(prev => ({
-      ...prev,
-      lat,
-      lng
-    }));
-  }, []);
-
-  // This is a duplicate of the loadLocation function above - removing it
-
-  // Delete saved location
-  const deleteLocation = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this location?')) {
-      setState(prev => ({
-        ...prev,
-        savedLocations: prev.savedLocations.filter(loc => loc.id !== id)
-      }));
-    }
-  };
-
-  // Open in Google Maps
-  const openInMaps = () => {
-    if (state.lat !== null && state.lng !== null) {
-      window.open(`https://www.google.com/maps?q=${state.lat},${state.lng}`, '_blank');
-    }
-  };
-
-  // Share location
-  const shareLocation = async () => {
-    if (state.lat === null || state.lng === null) return;
-    
-    const shareData = {
-      title: 'My Location',
-      text: `Location: ${state.myLocation || state.address}\nCoordinates: ${state.lat}, ${state.lng}\nUDPIN: ${state.udpin}`,
-      url: `https://www.google.com/maps?q=${state.lat},${state.lng}`
-    };
-
-    try {
-      if (navigator.share) {
-        await navigator.share(shareData);
-      } else {
-        // Fallback for browsers that don't support Web Share API
-        await navigator.clipboard.writeText(shareData.text);
-        alert('Location copied to clipboard!');
-      }
-    } catch (error) {
-      console.error('Error sharing:', error);
-    }
-  };
-
-  // Print location
-  const printLocation = () => {
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Location Details</title>
-          <style>
-            body { font-family: Arial, sans-serif; padding: 20px; }
-            .container { width: 2in; }
-            .header { text-align: center; margin-bottom: 10px; }
-            .qr-code { text-align: center; margin: 10px 0; }
-            .details { font-size: 12px; }
-            .label { font-weight: bold; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h3>Universal DIGIPIN</h3>
-            </div>
-            <div class="qr-code">
-              <div style="width: 1.5in; height: 1.5in; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
-                [QR Code for: ${state.udpin}]
-              </div>
-            </div>
-            <div class="details">
-              <p><span class="label">Name:</span> ${state.name || 'N/A'}</p>
-              <p><span class="label">Phone:</span> ${state.phone || 'N/A'}</p>
-              <p><span class="label">Location:</span> ${state.myLocation || state.address || 'N/A'}</p>
-              <p><span class="label">UDPIN:</span> ${state.udpin || 'N/A'}</p>
-              <p><span class="label">Coordinates:</span> ${state.lat !== null && state.lng !== null ? formatCoordinates(state.lat, state.lng) : 'N/A'}</p>
-            </div>
-          </div>
-          <script>
-            window.onload = function() { window.print(); window.close(); }
-          </script>
-        </body>
-        </html>
-      `);
-      printWindow.document.close();
-    }
-  };
-
   // Handle input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -421,34 +343,32 @@ function App() {
           <p className="text-gray-600">Generate and decode geographic location codes</p>
         </header>
 
-        {/* Main Content */}
-        <div className="p-4 md:flex md:space-x-4">
-          {/* Left Column - Form */}
-          <div className="md:w-1/2 space-y-4">
-            <button
-              onClick={handleFindMyLocation}
-              disabled={state.isGeoLocationLoading}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-200 flex items-center justify-center"
-            >
-              {state.isGeoLocationLoading ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Locating...
-                </>
-              ) : (
-                <>
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  Find My Location
-                </>
-              )}
-            </button>
+        <div className="p-4 bg-white rounded-lg shadow-md">
+          <button
+            onClick={handleFindMyLocation}
+            disabled={state.isGeoLocationLoading}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-200 flex items-center justify-center"
+          >
+            {state.isGeoLocationLoading ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Locating...
+              </>
+            ) : (
+              <>
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Find My Location
+              </>
+            )}
+          </button>
 
+          <div className="mt-6 grid grid-cols-1 gap-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Name (Optional)</label>
@@ -601,14 +521,14 @@ function App() {
           <div className="mt-4 md:mt-0 md:w-1/2 rounded-lg overflow-hidden border border-gray-200 bg-gray-100" style={{ position: 'relative', height: '400px' }}>
             {typeof window !== 'undefined' && (
               <MapContainer
-                center={state.lat !== null && state.lng !== null ? [state.lat, state.lng] : DEFAULT_CENTER}
+                center={mapCenter}
                 zoom={state.lat !== null && state.lng !== null ? 15 : ZOOM_LEVEL}
                 style={{ height: '100%', width: '100%', position: 'relative' }}
                 zoomControl={true}
                 whenReady={() => {
                   // Force update the map size when it's ready
                   setTimeout(() => {
-                    const mapElement = document.querySelector('.leaflet-container') as HTMLElement & { _leaflet_map?: Map };
+                    const mapElement = document.querySelector('.leaflet-container') as HTMLElement & { _leaflet_map?: any };
                     if (mapElement && mapElement._leaflet_map) {
                       mapElement._leaflet_map.invalidateSize();
                     }
@@ -631,7 +551,7 @@ function App() {
                     </Popup>
                   </Marker>
                 )}
-                <MapClickHandler onMapClick={handleMapClick} />
+                <MapClickHandler onMapClick={handleMapClick} center={mapCenter} />
               </MapContainer>
             )}
           </div>
