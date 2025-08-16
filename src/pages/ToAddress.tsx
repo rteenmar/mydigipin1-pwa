@@ -61,19 +61,23 @@ const ToAddress = () => {
       let currentLng = initialMapCenter[1];
       
       const savedData = loadToAddressData();
-      if (savedData && !isNaN(savedData.lat) && !isNaN(savedData.lng)) {
-        currentLat = savedData.lat;
-        currentLng = savedData.lng;
-        setName(savedData.name);
-        setPhone(savedData.phone);
-        setLocationName(savedData.address);
-        setUdpin(savedData.udpin);
-        setAddress(savedData.address);
-      } else if (savedData) {
-        console.warn('Saved To Address data contained NaN coordinates, falling back to default.');
+      if (savedData) {
+        // Always check for NaN in loaded data
+        if (!isNaN(savedData.lat) && !isNaN(savedData.lng)) {
+          currentLat = savedData.lat;
+          currentLng = savedData.lng;
+          setName(savedData.name);
+          setPhone(savedData.phone);
+          setLocationName(savedData.address);
+          setUdpin(savedData.udpin);
+          setAddress(savedData.address);
+        } else {
+          console.warn('Saved To Address data contained NaN coordinates, falling back to default.');
+        }
       }
-      // No geolocation for ToAddress, so currentLat/Lng remain initialMapCenter if no savedData
+      // No geolocation for ToAddress, so currentLat/Lng remain initialMapCenter if no valid savedData
 
+      // Always call updateLocationData to ensure consistent validation and state updates
       await updateLocationData(currentLat, currentLng);
     };
     initPosition();

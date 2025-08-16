@@ -119,18 +119,22 @@ const FromAddress = () => {
       let currentLng = initialMapCenter[1];
 
       const savedData = loadFromAddressData();
-      if (savedData && !isNaN(savedData.lat) && !isNaN(savedData.lng)) {
-        currentLat = savedData.lat;
-        currentLng = savedData.lng;
-        setName(savedData.name);
-        setPhone(savedData.phone);
-        setLocationName(savedData.address);
-        setUdpin(savedData.udpin);
-        setAddress(savedData.address);
-      } else if (savedData) {
-        console.warn('Saved From Address data contained NaN coordinates, falling back to geolocation or default.');
+      if (savedData) {
+        // Always check for NaN in loaded data
+        if (!isNaN(savedData.lat) && !isNaN(savedData.lng)) {
+          currentLat = savedData.lat;
+          currentLng = savedData.lng;
+          setName(savedData.name);
+          setPhone(savedData.phone);
+          setLocationName(savedData.address);
+          setUdpin(savedData.udpin);
+          setAddress(savedData.address);
+        } else {
+          console.warn('Saved From Address data contained NaN coordinates, attempting geolocation or falling back to default.');
+        }
       }
       
+      // Attempt geolocation if no valid saved data or if saved data was invalid
       if (navigator.geolocation) {
         try {
           const geoPos = await new Promise<GeolocationPosition>((resolve, reject) => {
