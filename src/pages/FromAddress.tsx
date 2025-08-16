@@ -7,7 +7,7 @@ import MapComponent from '../components/MapComponent'; // Import the new MapComp
 
 // Define props for LocationMarker component
 interface LocationMarkerProps {
-  position: [number, number]; // Position is now guaranteed to be valid
+  position: [number, number] | null; // Corrected: Allow position to be null
   onPositionChange: (lat: number, lng: number) => Promise<void>;
 }
 
@@ -40,6 +40,8 @@ const LocationMarker: React.FC<LocationMarkerProps> = ({ position, onPositionCha
     },
   });
 
+  if (!position) return null;
+
   return (
     <Marker
       draggable={true}
@@ -62,7 +64,7 @@ const LocationMarker: React.FC<LocationMarkerProps> = ({ position, onPositionCha
 
 const FromAddress = () => {
   const initialMapCenter: [number, number] = [20.5937, 78.9629]; // Default to India
-  const [position, setPosition] = useState<[number, number]>(initialMapCenter); // Initialize with default
+  const [position, setPosition] = useState<[number, number] | null>(null); // Initialize with null
   const [address, setAddress] = useState('');
   const [locationName, setLocationName] = useState('');
   const [udpin, setUdpin] = useState('');
@@ -101,7 +103,7 @@ const FromAddress = () => {
 
   // Initialize with default position or loaded data
   useEffect(() => {
-    let isMounted = true;
+    let isMounted = true; // Flag to prevent state updates on unmounted component
 
     const initPosition = async () => {
       try {
@@ -125,8 +127,9 @@ const FromAddress = () => {
                 maximumAge: 0
               });
             });
-            if (!isMounted) return;
+            if (!isMounted) return; // Check if component is still mounted
             
+            // Explicitly check for NaN here
             if (isNaN(geoPos.coords.latitude) || isNaN(geoPos.coords.longitude)) {
               console.warn('Geolocation returned NaN coordinates, falling back to default.');
               newPosition = initialMapCenter;
@@ -136,14 +139,14 @@ const FromAddress = () => {
 
           } catch (error) {
             console.log('Using default position due to geolocation error:', error);
-            if (!isMounted) return;
+            if (!isMounted) return; // Check if component is still mounted
             newPosition = initialMapCenter; // Use default if geolocation fails
           }
         } else {
           newPosition = initialMapCenter; // Default to India
         }
 
-        if (!isMounted) return;
+        if (!isMounted) return; // Check if component is still mounted
 
         setPosition(newPosition);
         // Only update location data if it wasn't loaded from storage
@@ -155,7 +158,7 @@ const FromAddress = () => {
 
       } catch (error) {
         console.error('Error getting location, defaulting to India:', error);
-        if (!isMounted) return;
+        if (!isMounted) return; // Check if component is still mounted
         setPosition(initialMapCenter);
         await updateLocationData(initialMapCenter[0], initialMapCenter[1]);
       }
@@ -164,9 +167,9 @@ const FromAddress = () => {
     initPosition();
 
     return () => {
-      isMounted = false;
+      isMounted = false; // Cleanup: set flag to false when component unmounts
     };
-  }, [updateLocationData, initialMapCenter]);
+  }, [updateLocationData]);
 
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -259,11 +262,13 @@ const FromAddress = () => {
           </form>
         </div>
 
-        <MapComponent center={position} isLoading={isLoading}>
-          <LocationMarker
-            position={position}
-            onPositionChange={updateLocationData}
-          />
+        <MapComponent center={position || initialMapCenter} isLoading={isLoading}>
+          {position && (
+            <LocationMarker
+              position={position}
+              onPositionChange={updateLocationData}
+            />
+          )}
         </MapComponent>
 
         <div className="p-4 border-t">
