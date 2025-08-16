@@ -1,67 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Marker, Popup } from 'react-leaflet';
 import { Link } from 'react-router-dom';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
 import { generateUDPIN, formatUDPIN } from '../lib/udpin';
 import { reverseGeocode } from '../lib/geocoding';
-
-// Fix for default marker icons in Leaflet with React
-import markerIcon from 'leaflet/dist/images/marker-icon.png';
-import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
-import markerShadow from 'leaflet/dist/images/marker-shadow.png';
-
-// @ts-ignore
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconUrl: markerIcon,
-  iconRetinaUrl: markerIcon2x,
-  shadowUrl: markerShadow,
-});
-
-const LocationMarker = ({ position, onPositionChange, popupText }: {
-  position: [number, number] | null;
-  onPositionChange: (pos: [number, number]) => void;
-  popupText: string;
-}) => {
-  useMapEvents({
-    click(e) {
-      const newPos: [number, number] = [e.latlng.lat, e.latlng.lng];
-      onPositionChange(newPos);
-    },
-  });
-
-  if (!position) return null;
-
-  return (
-    <Marker position={position}>
-      <Popup>{popupText}</Popup>
-    </Marker>
-  );
-};
-
-// Helper component to update map view and invalidate size
-const MapUpdater = ({ position, isLoading, mapRef }: { position: [number, number] | null; isLoading: boolean; mapRef: React.RefObject<L.Map | null> }) => {
-  const map = useMap();
-
-  useEffect(() => {
-    if (mapRef.current && !isLoading) {
-      // Invalidate size when loading finishes to ensure map renders correctly
-      mapRef.current.invalidateSize();
-    }
-  }, [isLoading, mapRef]);
-
-  useEffect(() => {
-    if (position && mapRef.current) {
-      map.flyTo(position, map.getZoom(), {
-        animate: true,
-        duration: 1.5,
-      });
-    }
-  }, [position, map]); 
-
-  return null;
-};
+import MapComponent from '../components/MapComponent'; // Import the new MapComponent
 
 const HomePage = () => {
   const [position, setPosition] = useState<[number, number] | null>(null);
@@ -69,7 +11,6 @@ const HomePage = () => {
   const [udpin, setUdpin] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const mapRef = useRef<L.Map>(null);
 
   const initialMapCenter: [number, number] = [20.5937, 78.9629]; // Default to India
 
@@ -81,10 +22,10 @@ const HomePage = () => {
         formatUDPIN(generateUDPIN(pos[0], pos[1])),
         reverseGeocode(pos[0], pos[1]).catch(() => 'Address not available')
       ]);
-      
+
       setUdpin(newUdpin);
       setAddress(addr);
-      
+
       return addr;
     } catch (error) {
       console.error('Error updating location data:', error);
@@ -95,23 +36,17 @@ const HomePage = () => {
     }
   }, []);
 
-  // Handle position changes
-  const handlePositionChange = useCallback((newPosition: [number, number]) => {
-    setPosition(newPosition);
-    updateLocationData(newPosition);
-  }, [updateLocationData]);
-
   // Initialize map position and data
   useEffect(() => {
     let isMounted = true;
-    
+
     const initMap = async () => {
       try {
         setIsLoading(true);
-        
+
         // Get current position or use default
         let newPosition: [number, number];
-        
+
         if (navigator.geolocation) {
           try {
             const geoPos = await new Promise<GeolocationPosition>((resolve, reject) => {
@@ -121,7 +56,7 @@ const HomePage = () => {
                 maximumAge: 0
               });
             });
-            
+
             if (!isMounted) return;
             newPosition = [geoPos.coords.latitude, geoPos.coords.longitude];
           } catch (error) {
@@ -132,24 +67,24 @@ const HomePage = () => {
         } else {
           newPosition = initialMapCenter; // Default to India
         }
-        
+
         if (!isMounted) return;
-        
+
         // Set position first, then update data
         setPosition(newPosition);
         await updateLocationData(newPosition);
-        
+
       } catch (error) {
         console.error('Error initializing map:', error);
         if (!isMounted) return;
-        
+
         setPosition(initialMapCenter); // Fallback position
         await updateLocationData(initialMapCenter);
       }
     };
-    
+
     initMap();
-    
+
     return () => {
       isMounted = false;
     };
@@ -159,7 +94,7 @@ const HomePage = () => {
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
-    
+
     try {
       setIsLoading(true);
       // For now, we'll just log the search query since searchLocation isn't implemented
@@ -184,40 +119,40 @@ const HomePage = () => {
         <h1 className="text-3xl font-bold text-gray-800 mb-2">Welcome to MyDigiPin</h1>
         <p className="text-gray-600">Your digital addressing system for precise location sharing</p>
       </div>
-      
+
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <Link 
-          to="/from-address" 
+        <Link
+          to="/from-address"
           className="bg-white p-6 rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition-shadow"
         >
           <h2 className="text-xl font-semibold mb-2 text-blue-600">From Address</h2>
           <p className="text-gray-600">Set your starting point and generate a digital address</p>
         </Link>
-        
-        <Link 
-          to="/to-address" 
+
+        <Link
+          to="/to-address"
           className="bg-white p-6 rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition-shadow"
         >
           <h2 className="text-xl font-semibold mb-2 text-green-600">To Address</h2>
           <p className="text-gray-600">Set your destination and get the digital address</p>
         </Link>
-        
-        <Link 
-          to="/print" 
+
+        <Link
+          to="/print"
           className="bg-white p-6 rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition-shadow"
         >
           <h2 className="text-xl font-semibold mb-2 text-purple-600">Print</h2>
           <p className="text-gray-600">Print your digital addresses with QR codes</p>
         </Link>
       </div>
-      
+
       {/* Map Section */}
       <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200 mb-8">
         <div className="p-4 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-800">Current Location</h2>
         </div>
-        
+
         {/* Search Bar */}
         <form onSubmit={handleSearch} className="p-4 border-b border-gray-200">
           <div className="flex gap-2">
@@ -240,44 +175,20 @@ const HomePage = () => {
             </button>
           </div>
         </form>
-        
+
         {/* Map Wrapper */}
         <div className="relative w-full" style={{ minHeight: '24rem', height: '24rem' }}>
-          {/* Map Container - always rendered with a default center */}
-          <MapContainer
-            center={initialMapCenter} // Use a default center initially
-            zoom={15}
-            style={{ height: '100%', width: '100%', minHeight: '100%' }}
-            zoomControl={true}
-            ref={mapRef}
-            preferCanvas={true}
-            className="z-0"
-          >
-            <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            />
-            {position && ( // Only render marker if position is available
-              <LocationMarker 
-                position={position} 
-                onPositionChange={handlePositionChange}
-                popupText={`Your location: ${address || 'Unknown address'}`}
-              />
+          <MapComponent center={position || initialMapCenter} isLoading={isLoading}>
+            {position && (
+              <Marker
+                position={position}
+              >
+                <Popup>Your location: {address || 'Unknown address'}</Popup>
+              </Marker>
             )}
-            <MapUpdater position={position} isLoading={isLoading} mapRef={mapRef} />
-          </MapContainer>
-
-          {/* Loading Overlay - conditionally rendered on top */}
-          {isLoading && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-white bg-opacity-90 transition-opacity duration-300">
-              <div className="text-center">
-                <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-                <p className="text-gray-600 font-medium">Loading map...</p>
-              </div>
-            </div>
-          )}
+          </MapComponent>
         </div>
-        
+
         {/* Location Information */}
         <div className="p-4 bg-gray-50 border-t border-gray-200">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -285,16 +196,16 @@ const HomePage = () => {
               <h3 className="text-sm font-medium text-gray-500">Address</h3>
               <p className="text-gray-800">{address || 'Loading...'}</p>
             </div>
-            
+
             <div>
               <h3 className="text-sm font-medium text-gray-500">Coordinates</h3>
               <p className="text-gray-800 font-mono">
-                {position 
-                  ? `${position[0].toFixed(6)}, ${position[1].toFixed(6)}` 
+                {position
+                  ? `${position[0].toFixed(6)}, ${position[1].toFixed(6)}`
                   : 'Loading...'}
               </p>
             </div>
-            
+
             <div>
               <h3 className="text-sm font-medium text-gray-500">UDPIN</h3>
               <p className="text-gray-800 font-mono font-bold">
@@ -304,7 +215,7 @@ const HomePage = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Get Started Section */}
       <div className="bg-blue-50 p-6 rounded-lg border border-blue-100">
         <h2 className="text-xl font-semibold text-gray-800 mb-3">Get Started</h2>
@@ -313,14 +224,14 @@ const HomePage = () => {
           Your digital addresses will be saved and can be printed or shared.
         </p>
         <div className="flex gap-3">
-          <Link 
-            to="/from-address" 
+          <Link
+            to="/from-address"
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors"
           >
             Set From Address
           </Link>
-          <Link 
-            to="/to-address" 
+          <Link
+            to="/to-address"
             className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition-colors"
           >
             Set To Address

@@ -1,19 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
+import { Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import { generateUDPIN, formatUDPIN } from '../lib/udpin';
 import { reverseGeocode } from '../lib/geocoding';
-import L from 'leaflet';
-import { saveFromAddressData, loadFromAddressData } from '../lib/appStorage'; // Import storage functions
-
-// Fix for default marker icons in Leaflet with React
-// @ts-expect-error
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
-});
+import { saveFromAddressData, loadFromAddressData } from '../lib/appStorage';
+import MapComponent from '../components/MapComponent'; // Import the new MapComponent
 
 // Define props for LocationMarker component
 interface LocationMarkerProps {
@@ -72,29 +62,6 @@ const LocationMarker: React.FC<LocationMarkerProps> = ({ position, onPositionCha
   );
 };
 
-// Helper component to update map view and invalidate size
-const MapUpdater = ({ position, isLoading, mapRef }: { position: [number, number] | null; isLoading: boolean; mapRef: React.RefObject<L.Map | null> }) => {
-  const map = useMap();
-
-  useEffect(() => {
-    if (mapRef.current && !isLoading) {
-      mapRef.current.invalidateSize();
-    }
-  }, [isLoading, mapRef]);
-
-  useEffect(() => {
-    if (position && mapRef.current) {
-      map.flyTo(position, map.getZoom(), {
-        animate: true,
-        duration: 0.5,
-      });
-    }
-  }, [position, map]);
-
-  return null;
-};
-
-
 const FromAddress = () => {
   const [position, setPosition] = useState<[number, number] | null>(null);
   const [address, setAddress] = useState('');
@@ -102,9 +69,8 @@ const FromAddress = () => {
   const [udpin, setUdpin] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [name, setName] = useState(''); // New state for Name
-  const [phone, setPhone] = useState(''); // New state for Phone no
-  const mapRef = useRef<L.Map>(null);
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
 
   const initialMapCenter: [number, number] = [20.5937, 78.9629]; // Default to India
 
@@ -116,13 +82,11 @@ const FromAddress = () => {
         formatUDPIN(generateUDPIN(lat, lng)),
         reverseGeocode(lat, lng)
       ]);
-      
+
       setUdpin(newUdpin);
       setAddress(addr);
-      
-      // Update position state
       setPosition([lat, lng]);
-      
+
     } catch (error) {
       console.error('Error updating location:', error);
     } finally {
@@ -142,7 +106,7 @@ const FromAddress = () => {
           newPosition = [savedData.lat, savedData.lng];
           setName(savedData.name);
           setPhone(savedData.phone);
-          setLocationName(savedData.address); // Assuming locationName stores the address for now
+          setLocationName(savedData.address);
           setUdpin(savedData.udpin);
           setAddress(savedData.address);
         } else if (navigator.geolocation) {
@@ -157,7 +121,7 @@ const FromAddress = () => {
         } else {
           newPosition = initialMapCenter; // Default to India
         }
-        
+
         setPosition(newPosition);
         // Only update location data if it wasn't loaded from storage
         if (!savedData) {
@@ -185,13 +149,13 @@ const FromAddress = () => {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`
       );
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch location');
       }
-      
+
       const data = await response.json();
-      
+
       if (data && data.length > 0) {
         const { lat, lon } = data[0];
         await updateLocationData(parseFloat(lat), parseFloat(lon));
@@ -227,27 +191,27 @@ const FromAddress = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen"> {/* Added h-screen for consistent height */}
+    <div className="flex flex-col h-screen">
       <div className="bg-blue-600 text-white p-4">
         <h1 className="text-xl font-bold">From Address</h1>
       </div>
-      
-      <div className="flex-1 flex flex-col"> {/* flex-1 to make this section take available height */}
+
+      <div className="flex-1 flex flex-col">
         <div className="p-4 border-b">
           <form onSubmit={handleSearch} className="flex gap-2">
-              <input
-                type="text"
-                id="from-location-search"
-                name="fromLocationSearch"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search location..."
-                aria-label="Search for a location"
-                className="flex-1 p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                disabled={isLoading}
-              />
-            <button 
-              type="submit" 
+            <input
+              type="text"
+              id="from-location-search"
+              name="fromLocationSearch"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search location..."
+              aria-label="Search for a location"
+              className="flex-1 p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              disabled={isLoading}
+            />
+            <button
+              type="submit"
               className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               disabled={isLoading}
             >
@@ -255,155 +219,127 @@ const FromAddress = () => {
             </button>
           </form>
         </div>
-          
-          <div className="relative w-full flex-1"> {/* flex-1 to make map container take available height */}
-            {/* MapContainer is always rendered with a default center */}
-            <MapContainer
-              center={position || initialMapCenter} // Use current position or default
-              zoom={15}
-              style={{ height: '100%', width: '100%' }}
-              zoomControl={true}
-              className="z-0"
-              ref={(map) => {
-                if (map) mapRef.current = map;
-              }}
-            >
-              <TileLayer
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              />
-              {position && (
-                <LocationMarker 
-                  position={position} 
-                  onPositionChange={async (lat, lng) => {
-                    await updateLocationData(lat, lng);
-                  }}
-                />
-              )}
-              <MapUpdater position={position} isLoading={isLoading} mapRef={mapRef} />
-            </MapContainer>
-            
-            {/* Loading overlay is a conditional child, positioned absolutely on top of the map */}
-            {isLoading && (
-              <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
-                <div className="bg-white p-4 rounded-lg">
-                  <p>Loading map...</p>
-                </div>
-              </div>
-            )}
+
+        <MapComponent center={position || initialMapCenter} isLoading={isLoading}>
+          {position && (
+            <LocationMarker
+              position={position}
+              onPositionChange={updateLocationData}
+            />
+          )}
+        </MapComponent>
+
+        <div className="p-4 border-t">
+          <div className="mb-4">
+            <label htmlFor="from-name" className="block text-sm font-medium text-gray-700 mb-1">
+              Name
+            </label>
+            <input
+              id="from-name"
+              name="fromName"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter your name"
+              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              aria-label="Your name"
+            />
           </div>
-          
-          <div className="p-4 border-t">
-            <div className="mb-4">
-              <label htmlFor="from-name" className="block text-sm font-medium text-gray-700 mb-1">
-                Name
-              </label>
+
+          <div className="mb-4">
+            <label htmlFor="from-phone" className="block text-sm font-medium text-gray-700 mb-1">
+              Phone no
+            </label>
+            <input
+              id="from-phone"
+              name="fromPhone"
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="Enter your phone number"
+              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              aria-label="Your phone number"
+            />
+          </div>
+
+          <div className="mb-4">
+            <label htmlFor="from-location-name" className="block text-sm font-medium text-gray-700 mb-1">
+              Location Name
+            </label>
+            <div className="flex gap-2">
               <input
-                id="from-name"
-                name="fromName"
+                id="from-location-name"
+                name="fromLocationName"
                 type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Enter your name"
-                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                aria-label="Your name"
+                value={locationName}
+                onChange={(e) => setLocationName(e.target.value)}
+                placeholder="Enter location name"
+                className="flex-1 p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                aria-label="Location name"
               />
+              <button
+                type="button"
+                onClick={copyAddressToLocation}
+                className="bg-gray-200 hover:bg-gray-300 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                title="Copy from address"
+              >
+                📋
+              </button>
             </div>
-
-            <div className="mb-4">
-              <label htmlFor="from-phone" className="block text-sm font-medium text-gray-700 mb-1">
-                Phone no
-              </label>
-              <input
-                id="from-phone"
-                name="fromPhone"
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="Enter your phone number"
-                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                aria-label="Your phone number"
-              />
-            </div>
-
-            <div className="mb-4">
-              <label htmlFor="from-location-name" className="block text-sm font-medium text-gray-700 mb-1">
-                Location Name
-              </label>
-              <div className="flex gap-2">
-                <input
-                  id="from-location-name"
-                  name="fromLocationName"
-                  type="text"
-                  value={locationName}
-                  onChange={(e) => setLocationName(e.target.value)}
-                  placeholder="Enter location name"
-                  className="flex-1 p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  aria-label="Location name"
-                />
-                <button
-                  type="button"
-                  onClick={copyAddressToLocation}
-                  className="bg-gray-200 hover:bg-gray-300 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  title="Copy from address"
-                >
-                  📋
-                </button>
-              </div>
-            </div>
-            
-            <div className="mb-4">
-              <label htmlFor="from-location-address" className="block text-sm font-medium text-gray-700 mb-1">
-                Address
-              </label>
-              <textarea
-                id="from-location-address"
-                name="fromLocationAddress"
-                value={address}
-                readOnly
-                className="w-full p-2 border rounded bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                rows={3}
-                aria-label="Location address"
-              />
-            </div>
-            
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                UDPIN
-              </label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={udpin}
-                  readOnly
-                  className="flex-1 p-2 border rounded bg-gray-50 font-mono"
-                  aria-label="UDPIN code"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigator.clipboard.writeText(udpin);
-                    alert('UDPIN copied to clipboard!');
-                  }}
-                  className="bg-gray-200 hover:bg-gray-300 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  title="Copy UDPIN"
-                >
-                  📋
-                </button>
-              </div>
-            </div>
-            
-            <button
-              type="button"
-              onClick={handleSaveLocation}
-              className="w-full bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Saving...' : 'Save Location'}
-            </button>
           </div>
+
+          <div className="mb-4">
+            <label htmlFor="from-location-address" className="block text-sm font-medium text-gray-700 mb-1">
+              Address
+            </label>
+            <textarea
+              id="from-location-address"
+              name="fromLocationAddress"
+              value={address}
+              readOnly
+              className="w-full p-2 border rounded bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              rows={3}
+              aria-label="Location address"
+            />
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              UDPIN
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={udpin}
+                readOnly
+                className="flex-1 p-2 border rounded bg-gray-50 font-mono"
+                aria-label="UDPIN code"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(udpin);
+                  alert('UDPIN copied to clipboard!');
+                }}
+                className="bg-gray-200 hover:bg-gray-300 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                title="Copy UDPIN"
+              >
+                📋
+              </button>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleSaveLocation}
+            className="w-full bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+            disabled={isLoading}
+          >
+            {isLoading ? 'Saving...' : 'Save Location'}
+          </button>
         </div>
       </div>
+    </div>
   );
 };
 
