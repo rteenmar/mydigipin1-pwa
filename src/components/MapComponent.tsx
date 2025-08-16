@@ -56,9 +56,7 @@ const MapComponent: React.FC<MapComponentProps> = ({ center, zoom = 15, isLoadin
         style={{ height: '100%', width: '100%' }}
         zoomControl={true}
         className="z-0"
-        ref={(map) => {
-          if (map) mapRef.current = map;
-        }}
+        ref={mapRef} // Direct ref assignment
       >
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

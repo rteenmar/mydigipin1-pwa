@@ -175,7 +175,14 @@ const FromAddress = () => {
 
       if (data && data.length > 0) {
         const { lat, lon } = data[0];
-        await updateLocationData(parseFloat(lat), parseFloat(lon));
+        const parsedLat = parseFloat(lat);
+        const parsedLon = parseFloat(lon);
+
+        if (!isNaN(parsedLat) && !isNaN(parsedLon)) {
+          await updateLocationData(parsedLat, parsedLon);
+        } else {
+          alert('Received invalid coordinates from search. Please try a different search term.');
+        }
       } else {
         alert('No results found. Please try a different search term.');
       }
