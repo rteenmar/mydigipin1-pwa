@@ -280,7 +280,7 @@ body {
     box-shadow: none !important;
     border-radius: 0 !important;
     font-size: 0.7em !important; /* Smaller font for more content */
-    box-sizing: border-box !important; /* Ensure consistent box model */
+    box-sizing: border-box !important;
   }
 
   .address-slip .flex-shrink-0 { /* Left column for QR/Barcode */
@@ -301,11 +301,7 @@ body {
     min-width: 0 !important; /* Allow content to shrink */
     overflow: hidden !important; /* Crucial to prevent content overflow */
     box-sizing: border-box !important;
-    display: flex !important; /* Make it a flex container for its children */
-    flex-direction: column !important; /* Stack children vertically */
-    justify-content: flex-start !important;
-    align-items: flex-start !important;
-    min-height: calc(2in - 6mm) !important; /* Ensure it takes up height, accounting for padding */
+    text-align: right !important; /* Align all text content to the right */
   }
 
   .address-slip .qr-code,
@@ -337,9 +333,7 @@ body {
     font-size: 0.9em !important; /* Adjusted font size for details within the smaller slip */
     line-height: 1.2 !important; /* Tighter line spacing */
     margin-bottom: 1mm !important; /* Small margin between lines */
-    display: flex !important; /* Make each p a flex container */
-    flex-wrap: nowrap !important; /* Prevent wrapping within a line */
-    align-items: flex-start !important; /* Align items to top */
+    display: block !important; /* Ensure each detail is on its own line */
     white-space: normal !important; /* Ensure text wraps */
     word-break: break-all !important; /* Force break long words */
     box-sizing: border-box !important;
@@ -348,17 +342,13 @@ body {
     margin-bottom: 0 !important;
   }
   .address-slip p strong {
-    display: inline-block !important; /* Ensure strong doesn't break line */
-    min-width: 15mm !important; /* Align labels */
-    text-align: right !important;
-    margin-right: 2mm !important;
-    flex-shrink: 0 !important; /* Prevent shrinking */
+    display: inline !important; /* Allow strong to be inline with span */
+    font-weight: bold !important; /* Ensure bold style */
+    margin-right: 2mm !important; /* Space between label and value */
   }
   .address-slip p span {
-    display: inline-block !important;
+    display: inline !important; /* Allow span to be inline with strong */
     vertical-align: top !important;
-    flex-grow: 1 !important; /* Allow content to grow */
-    min-width: 0 !important; /* Allow content to shrink */
     white-space: normal !important; /* Ensure text wraps */
     word-break: break-all !important; /* Force break long words */
   }
