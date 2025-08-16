@@ -222,6 +222,7 @@ body {
     padding: 0 !important;
     -webkit-print-color-adjust: exact !important; /* For background colors */
     color-adjust: exact !important;
+    box-sizing: border-box !important; /* Ensure consistent box model */
   }
 
   .print-page {
@@ -230,6 +231,7 @@ body {
     padding: 0 !important;
     box-shadow: none !important;
     border-radius: 0 !important;
+    box-sizing: border-box !important;
   }
 
   .print-hidden,
@@ -247,6 +249,7 @@ body {
     box-shadow: none !important;
     border: none !important;
     background-color: transparent !important;
+    box-sizing: border-box !important;
   }
 
   .preview-content {
@@ -257,6 +260,7 @@ body {
     border: none !important;
     box-shadow: none !important;
     background-color: transparent !important;
+    box-sizing: border-box !important;
   }
 
   .address-slip {
@@ -276,6 +280,7 @@ body {
     box-shadow: none !important;
     border-radius: 0 !important;
     font-size: 0.7em !important; /* Smaller font for more content */
+    box-sizing: border-box !important; /* Ensure consistent box model */
   }
 
   .address-slip .flex-shrink-0 { /* Left column for QR/Barcode */
@@ -288,15 +293,19 @@ body {
     min-width: 30mm !important;
     max-width: 30mm !important;
     flex-shrink: 0 !important; /* Ensure it doesn't shrink */
+    box-sizing: border-box !important;
   }
 
   .address-slip .flex-grow { /* Right column for text details */
     flex-grow: 1 !important;
     min-width: 0 !important; /* Allow content to shrink */
-    word-wrap: break-word !important; /* Ensure long words break */
-    overflow-wrap: break-word !important;
-    white-space: normal !important; /* Ensure text wraps */
-    flex-shrink: 1 !important; /* Ensure it shrinks if needed */
+    overflow: hidden !important; /* Crucial to prevent content overflow */
+    box-sizing: border-box !important;
+    display: flex !important; /* Make it a flex container for its children */
+    flex-direction: column !important; /* Stack children vertically */
+    justify-content: flex-start !important;
+    align-items: flex-start !important;
+    min-height: calc(2in - 6mm) !important; /* Ensure it takes up height, accounting for padding */
   }
 
   .address-slip .qr-code,
@@ -305,6 +314,7 @@ body {
     padding: 0 !important;
     text-align: center !important;
     line-height: 1 !important; /* Tighten line height for images */
+    box-sizing: border-box !important;
   }
 
   .address-slip .qr-code {
@@ -314,20 +324,25 @@ body {
   .address-slip .qr-code img {
     width: 20mm !important; /* Smaller QR code to fit */
     height: 20mm !important;
+    display: block !important; /* Ensure image is block level */
   }
 
   .address-slip .barcode img {
     width: 30mm !important; /* Smaller barcode to fit */
     height: 10mm !important; /* Adjusted height */
+    display: block !important; /* Ensure image is block level */
   }
 
   .address-slip p {
     font-size: 0.9em !important; /* Adjusted font size for details within the smaller slip */
     line-height: 1.2 !important; /* Tighter line spacing */
     margin-bottom: 1mm !important; /* Small margin between lines */
-    display: block !important; /* Ensure each detail is on its own line */
+    display: flex !important; /* Make each p a flex container */
+    flex-wrap: nowrap !important; /* Prevent wrapping within a line */
+    align-items: flex-start !important; /* Align items to top */
     white-space: normal !important; /* Ensure text wraps */
     word-break: break-all !important; /* Force break long words */
+    box-sizing: border-box !important;
   }
   .address-slip p:last-child {
     margin-bottom: 0 !important;
@@ -337,11 +352,13 @@ body {
     min-width: 15mm !important; /* Align labels */
     text-align: right !important;
     margin-right: 2mm !important;
+    flex-shrink: 0 !important; /* Prevent shrinking */
   }
   .address-slip p span {
     display: inline-block !important;
     vertical-align: top !important;
-    max-width: calc(100% - 17mm) !important; /* Adjust max-width for content */
+    flex-grow: 1 !important; /* Allow content to grow */
+    min-width: 0 !important; /* Allow content to shrink */
     white-space: normal !important; /* Ensure text wraps */
     word-break: break-all !important; /* Force break long words */
   }
