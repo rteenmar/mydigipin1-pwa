@@ -15,6 +15,7 @@ const ToAddress = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [mapKey, setMapKey] = useState(0); // Key to force map re-render
 
   const updateLocationData = useCallback(async (lat: number, lng: number) => {
     try {
@@ -24,6 +25,7 @@ const ToAddress = () => {
         setUdpin('N/A');
         setAddress('Invalid coordinates');
         setPosition(initialMapCenter); // Fallback to default if NaN
+        setMapKey(prevKey => prevKey + 1); // Increment key on fallback
         return;
       }
       const [newUdpin, addr] = await Promise.all([
@@ -34,10 +36,12 @@ const ToAddress = () => {
       setUdpin(newUdpin);
       setAddress(addr);
       setPosition([lat, lng]);
+      setMapKey(prevKey => prevKey + 1); // Increment key on successful update
 
     } catch (error) {
       console.error('Error updating location:', error);
       setPosition(initialMapCenter); // Fallback to default on error
+      setMapKey(prevKey => prevKey + 1); // Increment key on error
     } finally {
       setIsLoading(false);
     }
@@ -67,10 +71,12 @@ const ToAddress = () => {
           await updateLocationData(initialMapCenter[0], initialMapCenter[1]);
         } else {
           setIsLoading(false); // If loaded from storage, stop loading
+          setMapKey(prevKey => prevKey + 1); // Increment key even if loaded from storage
         }
       } catch (error) {
         console.error('Error initializing map:', error);
         setPosition(initialMapCenter); // Fallback to default on error
+        setMapKey(prevKey => prevKey + 1); // Increment key on error
       } finally {
         setIsLoading(false);
       }
@@ -102,15 +108,18 @@ const ToAddress = () => {
         } else {
           alert('Received invalid coordinates from search. Please try a different search term.');
           setPosition(initialMapCenter); // Fallback on invalid search result
+          setMapKey(prevKey => prevKey + 1); // Increment key on fallback
         }
       } else {
         alert('No results found. Please try a different search term.');
         setPosition(initialMapCenter); // Fallback if no results
+        setMapKey(prevKey => prevKey + 1); // Increment key on fallback
       }
     } catch (error) {
       console.error('Error searching location:', error);
       alert('Failed to find location. Please try again.');
       setPosition(initialMapCenter); // Fallback on search error
+      setMapKey(prevKey => prevKey + 1); // Increment key on error
     } finally {
       setIsLoading(false);
     }
@@ -134,11 +143,13 @@ const ToAddress = () => {
       } else {
         alert('Decoded UDPIN resulted in invalid coordinates. Please check the UDPIN.');
         setPosition(initialMapCenter); // Fallback on invalid decode
+        setMapKey(prevKey => prevKey + 1); // Increment key on fallback
       }
     } catch (error) {
       console.error('Error decoding UDPIN:', error);
       alert('Failed to decode UDPIN. Please check the format.');
       setPosition(initialMapCenter); // Fallback on decode error
+      setMapKey(prevKey => prevKey + 1); // Increment key on error
     } finally {
       setIsLoading(false);
     }
@@ -194,8 +205,8 @@ const ToAddress = () => {
           </form>
         </div>
 
-        <MapComponent center={position} isLoading={isLoading} zoom={13}>
-          <Marker position={position}>
+        <MapComponent key={mapKey} center={position} isLoading={isLoading} zoom={13}>
+          <Marker key={`marker-${mapKey}`} position={position}>
             <Popup>
               <div>
                 <p>Lat: {position[0].toFixed(4)}</p>

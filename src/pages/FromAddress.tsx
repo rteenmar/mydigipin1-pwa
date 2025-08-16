@@ -70,6 +70,7 @@ const FromAddress = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [mapKey, setMapKey] = useState(0); // Key to force map re-render
 
   // Function to update location data
   const updateLocationData = useCallback(async (lat: number, lng: number) => {
@@ -80,6 +81,7 @@ const FromAddress = () => {
         setUdpin('N/A');
         setAddress('Invalid coordinates');
         setPosition(initialMapCenter); // Fallback to default if NaN
+        setMapKey(prevKey => prevKey + 1); // Increment key on fallback
         return;
       }
       const [newUdpin, addr] = await Promise.all([
@@ -90,10 +92,12 @@ const FromAddress = () => {
       setUdpin(newUdpin);
       setAddress(addr);
       setPosition([lat, lng]);
+      setMapKey(prevKey => prevKey + 1); // Increment key on successful update
 
     } catch (error) {
       console.error('Error updating location:', error);
       setPosition(initialMapCenter); // Fallback to default on error
+      setMapKey(prevKey => prevKey + 1); // Increment key on error
     } finally {
       setIsLoading(false);
     }
@@ -151,6 +155,7 @@ const FromAddress = () => {
           await updateLocationData(newPosition[0], newPosition[1]);
         } else {
           setIsLoading(false); // If loaded from storage, stop loading
+          setMapKey(prevKey => prevKey + 1); // Increment key even if loaded from storage
         }
 
       } catch (error) {
@@ -191,19 +196,22 @@ const FromAddress = () => {
         const parsedLon = parseFloat(lon);
 
         if (!isNaN(parsedLat) && !isNaN(parsedLon)) {
-          await updateLocationData(parsedLat, parsedLon); // Corrected call
+          await updateLocationData(parsedLat, parsedLon);
         } else {
           alert('Received invalid coordinates from search. Please try a different search term.');
           setPosition(initialMapCenter); // Fallback on invalid search result
+          setMapKey(prevKey => prevKey + 1); // Increment key on fallback
         }
       } else {
         alert('No results found. Please try a different search term.');
         setPosition(initialMapCenter); // Fallback if no results
+        setMapKey(prevKey => prevKey + 1); // Increment key on fallback
       }
     } catch (error) {
       console.error('Error searching location:', error);
       alert('Failed to find location. Please try again.');
       setPosition(initialMapCenter); // Fallback on search error
+      setMapKey(prevKey => prevKey + 1); // Increment key on error
     } finally {
       setIsLoading(false);
     }
@@ -259,8 +267,9 @@ const FromAddress = () => {
           </form>
         </div>
 
-        <MapComponent center={position} isLoading={isLoading}>
+        <MapComponent key={mapKey} center={position} isLoading={isLoading}>
           <LocationMarker
+            key={`marker-${mapKey}`} // Also key the marker
             position={position}
             onPositionChange={updateLocationData}
           />

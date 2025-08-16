@@ -12,19 +12,18 @@ const HomePage = () => {
   const [udpin, setUdpin] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [mapKey, setMapKey] = useState(0); // Key to force map re-render
 
   // Update location data function
-  const updateLocationData = useCallback(async (pos: [number, number]) => {
+  const updateLocationData = useCallback(async (lat: number, lng: number) => {
     try {
       setIsLoading(true);
-      const lat = pos[0];
-      const lng = pos[1];
-
       if (isNaN(lat) || isNaN(lng)) {
-        console.error('Invalid coordinates passed to updateLocationData:', pos);
+        console.error('Invalid coordinates passed to updateLocationData:', lat, lng);
         setAddress('Invalid coordinates');
         setUdpin('N/A');
         setPosition(initialMapCenter); // Fallback to default if NaN
+        setMapKey(prevKey => prevKey + 1); // Increment key on fallback
         return 'Invalid coordinates';
       }
 
@@ -35,13 +34,15 @@ const HomePage = () => {
 
       setUdpin(newUdpin);
       setAddress(addr);
-      setPosition(pos); // Set valid position
+      setPosition([lat, lng]); // Set valid position
+      setMapKey(prevKey => prevKey + 1); // Increment key on successful update
 
       return addr;
     } catch (error) {
       console.error('Error updating location data:', error);
       setAddress('Address not available');
       setPosition(initialMapCenter); // Fallback to default on error
+      setMapKey(prevKey => prevKey + 1); // Increment key on error
       return 'Address not available';
     } finally {
       setIsLoading(false); // Set loading to false after data is fetched
@@ -89,14 +90,14 @@ const HomePage = () => {
 
         // Set position first, then update data
         setPosition(newPosition);
-        await updateLocationData(newPosition);
+        await updateLocationData(newPosition[0], newPosition[1]); // Pass individual lat, lng
 
       } catch (error) {
         console.error('Error initializing map:', error);
         if (!isMounted) return;
 
         setPosition(initialMapCenter); // Fallback position
-        await updateLocationData(initialMapCenter);
+        await updateLocationData(initialMapCenter[0], initialMapCenter[1]); // Pass individual lat, lng
       }
     };
 
@@ -130,19 +131,22 @@ const HomePage = () => {
         const parsedLon = parseFloat(lon);
 
         if (!isNaN(parsedLat) && !isNaN(parsedLon)) {
-          await updateLocationData([parsedLat, parsedLon]); // Corrected call
+          await updateLocationData(parsedLat, parsedLon); // Corrected call
         } else {
           alert('Received invalid coordinates from search. Please try a different search term.');
           setPosition(initialMapCenter); // Fallback on invalid search result
+          setMapKey(prevKey => prevKey + 1); // Increment key on fallback
         }
       } else {
         alert('No results found. Please try a different search term.');
         setPosition(initialMapCenter); // Fallback if no results
+        setMapKey(prevKey => prevKey + 1); // Increment key on fallback
       }
     } catch (error) {
       console.error('Error searching location:', error);
       alert('Failed to find location. Please try again.');
       setPosition(initialMapCenter); // Fallback on search error
+      setMapKey(prevKey => prevKey + 1); // Increment key on error
     } finally {
       setIsLoading(false);
     }
@@ -214,8 +218,9 @@ const HomePage = () => {
 
         {/* Map Wrapper */}
         <div className="relative w-full" style={{ minHeight: '24rem', height: '24rem' }}>
-          <MapComponent center={position} isLoading={isLoading}>
+          <MapComponent key={mapKey} center={position} isLoading={isLoading}>
             <Marker
+              key={`marker-${mapKey}`} // Also key the marker
               position={position}
             >
               <Popup>Your location: {address || 'Unknown address'}</Popup>
