@@ -51,7 +51,8 @@ body {
 /* Map container styles - Adjusted */
 .leaflet-container {
   width: 100%; /* Keep width 100% */
-  /* Removed height: 100% !important; and min-height: 400px; */
+  height: 100% !important; /* Re-added */
+  min-height: 400px; /* Re-added */
   border-radius: var(--border-radius);
   box-shadow: var(--shadow);
   z-index: 0;

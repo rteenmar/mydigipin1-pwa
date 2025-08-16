@@ -16,7 +16,8 @@
 /* Fix for Leaflet container - Adjusted */
 .leaflet-container {
   width: 100%;
-  /* Removed height: 100%; and min-height: 400px; */
+  height: 100%; /* Re-added */
+  min-height: 400px; /* Re-added */
   z-index: 0;
   background: #f5f7fa;
 }
