@@ -220,6 +220,8 @@ body {
     background-color: #fff !important;
     margin: 0 !important;
     padding: 0 !important;
+    -webkit-print-color-adjust: exact !important; /* For background colors */
+    color-adjust: exact !important;
   }
 
   .print-page {
@@ -240,11 +242,18 @@ body {
     display: none !important;
   }
 
-  .print-layout {
+  .print-preview {
+    padding: 0 !important; /* Remove padding from preview container */
+    box-shadow: none !important;
+    border: none !important;
+    background-color: transparent !important;
+  }
+
+  .preview-content {
     display: flex !important;
     flex-direction: column !important;
-    gap: 5mm !important; /* Consistent spacing */
-    padding: 5mm !important; /* Consistent padding */
+    gap: 5mm !important; /* Consistent spacing between slips */
+    padding: 5mm !important; /* Overall padding for the print area */
     border: none !important;
     box-shadow: none !important;
     background-color: transparent !important;
@@ -255,11 +264,12 @@ body {
     height: 2in !important; /* Explicitly set height */
     overflow: hidden !important; /* Crucial for fixed size */
     display: flex !important; /* Ensure flex layout */
+    flex-wrap: nowrap !important; /* Prevent wrapping of main columns */
     align-items: flex-start !important; /* Align content to top */
-    justify-content: space-between !important; /* Space between left/right */
+    justify-content: flex-start !important; /* Align content to start */
     border: 1px solid #ccc !important; /* Make border visible for debugging */
-    padding: 5mm !important; /* Consistent padding */
-    margin-bottom: 5mm !important; /* Consistent spacing between slips */
+    padding: 3mm !important; /* Consistent padding inside the slip */
+    margin-bottom: 0 !important; /* Managed by parent gap */
     page-break-inside: avoid !important; /* Keep slips together */
     background-color: #fff !important;
     box-shadow: none !important;
@@ -267,19 +277,16 @@ body {
     font-size: 0.7em !important; /* Smaller font for more content */
   }
 
-  .address-slip:last-child {
-    margin-bottom: 0 !important;
-  }
-
   .address-slip .flex-shrink-0 { /* Left column for QR/Barcode */
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
-    justify-content: center !important;
+    justify-content: flex-start !important; /* Align codes to top */
     padding-right: 3mm !important; /* Space between codes and text */
     flex-basis: 30mm !important; /* Fixed width for codes (approx 1.2in) */
     min-width: 30mm !important;
     max-width: 30mm !important;
+    flex-shrink: 0 !important; /* Ensure it doesn't shrink */
   }
 
   .address-slip .flex-grow { /* Right column for text details */
@@ -287,6 +294,7 @@ body {
     min-width: 0 !important; /* Allow content to shrink */
     word-wrap: break-word !important; /* Ensure long words break */
     overflow-wrap: break-word !important;
+    white-space: normal !important; /* Ensure text wraps */
   }
 
   .address-slip .qr-code,
@@ -294,6 +302,11 @@ body {
     margin: 0 !important; /* Remove any default margins */
     padding: 0 !important;
     text-align: center !important;
+    line-height: 1 !important; /* Tighten line height for images */
+  }
+
+  .address-slip .qr-code {
+    margin-bottom: 2mm !important; /* Space between QR and barcode */
   }
 
   .address-slip .qr-code img {
@@ -310,6 +323,8 @@ body {
     font-size: 0.9em !important; /* Adjusted font size for details within the smaller slip */
     line-height: 1.2 !important; /* Tighter line spacing */
     margin-bottom: 0 !important; /* Remove default paragraph margin */
+    display: block !important; /* Ensure each detail is on its own line */
+    white-space: normal !important; /* Ensure text wraps */
   }
   .address-slip p strong {
     display: inline-block !important; /* Ensure strong doesn't break line */
@@ -321,5 +336,6 @@ body {
     display: inline-block !important;
     vertical-align: top !important;
     max-width: calc(100% - 17mm) !important; /* Adjust max-width for content */
+    white-space: normal !important; /* Ensure text wraps */
   }
 }
