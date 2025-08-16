@@ -231,7 +231,7 @@ const FromAddress = () => {
           </form>
         </div>
           
-          <div className="flex-1 relative">
+          <div className="relative w-full" style={{ height: '400px' }}> {/* Adjusted height here */}
             {/* MapContainer is always rendered with a default center */}
             <MapContainer
               center={position || initialMapCenter} // Use current position or default

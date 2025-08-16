@@ -175,7 +175,7 @@ const ToAddress = () => {
           </form>
         </div>
 
-        <div className="flex-1 relative">
+        <div className="relative w-full" style={{ height: '400px' }}> {/* Adjusted height here */}
           <MapContainer
             center={position} // Use current position
             zoom={13}
