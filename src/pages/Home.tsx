@@ -7,7 +7,7 @@ import MapComponent from '../components/MapComponent'; // Import the new MapComp
 
 const HomePage = () => {
   const initialMapCenter: [number, number] = [20.5937, 78.9629]; // Default to India
-  const [position, setPosition] = useState<[number, number] | null>(null); // Initialize as null
+  const [position, setPosition] = useState<[number, number]>(initialMapCenter); // Initialize with default
   const [address, setAddress] = useState('');
   const [udpin, setUdpin] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -205,23 +205,14 @@ const HomePage = () => {
 
         {/* Map Wrapper */}
         <div className="relative w-full" style={{ minHeight: '24rem', height: '24rem' }}>
-          {position && (
-            <MapComponent key={mapKey} center={position} isLoading={isLoading}>
-              <Marker
-                key={`marker-${mapKey}`} // Also key the marker
-                position={position}
-              >
-                <Popup>Your location: {address || 'Unknown address'}</Popup>
-              </Marker>
-            </MapComponent>
-          )}
-          {isLoading && !position && (
-            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
-              <div className="bg-white p-4 rounded-lg">
-                <p>Loading map...</p>
-              </div>
-            </div>
-          )}
+          <MapComponent key={mapKey} center={position} isLoading={isLoading}>
+            <Marker
+              key={`marker-${mapKey}`} // Also key the marker
+              position={position}
+            >
+              <Popup>Your location: {address || 'Unknown address'}</Popup>
+            </Marker>
+          </MapComponent>
         </div>
 
         {/* Location Information */}

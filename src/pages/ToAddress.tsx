@@ -7,7 +7,7 @@ import MapComponent from '../components/MapComponent'; // Import the new MapComp
 
 const ToAddress = () => {
   const initialMapCenter: [number, number] = [20.5937, 78.9629]; // Default to India
-  const [position, setPosition] = useState<[number, number] | null>(null); // Initialize as null
+  const [position, setPosition] = useState<[number, number]>(initialMapCenter); // Initialize with default
   const [address, setAddress] = useState('');
   const [locationName, setLocationName] = useState('');
   const [udpin, setUdpin] = useState('');
@@ -133,7 +133,7 @@ const ToAddress = () => {
     try {
       const { lat, lng } = decodeUDPIN(udpin);
       let targetLat = initialMapCenter[0];
-      let targetLng = initialMapCenter[1]; // Corrected typo here
+      let targetLng = initialMapCenter[1];
 
       if (!isNaN(lat) && !isNaN(lng)) {
         targetLat = lat;
@@ -203,28 +203,17 @@ const ToAddress = () => {
           </form>
         </div>
 
-        <div className="relative w-full flex-1">
-          {position && (
-            <MapComponent key={mapKey} center={position} isLoading={isLoading} zoom={13}>
-              <Marker key={`marker-${mapKey}`} position={position}>
-                <Popup>
-                  <div>
-                    <p>Lat: {position[0].toFixed(4)}</p>
-                    <p>Lng: {position[1].toFixed(4)}</p>
-                    <p>UDPIN: {udpin}</p>
-                  </div>
-                </Popup>
-              </Marker>
-            </MapComponent>
-          )}
-          {isLoading && !position && (
-            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
-              <div className="bg-white p-4 rounded-lg">
-                <p>Loading map...</p>
+        <MapComponent key={mapKey} center={position} isLoading={isLoading} zoom={13}>
+          <Marker key={`marker-${mapKey}`} position={position}>
+            <Popup>
+              <div>
+                <p>Lat: {position[0].toFixed(4)}</p>
+                <p>Lng: {position[1].toFixed(4)}</p>
+                <p>UDPIN: {udpin}</p>
               </div>
-            </div>
-          )}
-        </div>
+            </Popup>
+          </Marker>
+        </MapComponent>
 
         <div className="p-4 border-t">
           <div className="mb-4">
