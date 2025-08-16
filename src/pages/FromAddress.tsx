@@ -70,7 +70,7 @@ const FromAddress = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [mapKey, setMapKey] = useState(0); // Key to force map re-render
+  // Removed mapKey state
 
   // Function to update location data, ensuring coordinates are valid
   const updateLocationData = useCallback(async (inputLat: number, inputLng: number): Promise<void> => {
@@ -105,7 +105,7 @@ const FromAddress = () => {
       }
       setAddress(newAddress);
       setUdpin(newUdpin);
-      setMapKey(prevKey => prevKey + 1);
+      // Removed setMapKey
       setIsLoading(false);
     }
   }, [initialMapCenter]);
@@ -131,7 +131,7 @@ const FromAddress = () => {
         setAddress(savedData.address);
         // If data loaded from storage, directly set position and stop loading
         setPosition([currentLat, currentLng]);
-        setMapKey(prevKey => prevKey + 1);
+        // Removed setMapKey
         setIsLoading(false);
         return; // Exit early as data is loaded
       } else if (navigator.geolocation) {
@@ -271,7 +271,7 @@ const FromAddress = () => {
           </form>
         </div>
 
-        <MapComponent key={mapKey} center={position} isLoading={isLoading}>
+        <MapComponent center={position} isLoading={isLoading}>
           <LocationMarker
             position={position}
             onPositionChange={updateLocationData}

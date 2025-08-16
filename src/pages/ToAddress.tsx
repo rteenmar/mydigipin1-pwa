@@ -15,7 +15,7 @@ const ToAddress = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [mapKey, setMapKey] = useState(0); // Key to force map re-render
+  // Removed mapKey state
 
   // Function to update location data, ensuring coordinates are valid
   const updateLocationData = useCallback(async (inputLat: number, inputLng: number) => {
@@ -50,7 +50,7 @@ const ToAddress = () => {
       }
       setAddress(newAddress);
       setUdpin(newUdpin);
-      setMapKey(prevKey => prevKey + 1);
+      // Removed setMapKey
       setIsLoading(false);
     }
   }, [initialMapCenter]);
@@ -208,8 +208,8 @@ const ToAddress = () => {
           </form>
         </div>
 
-        <MapComponent key={mapKey} center={position} isLoading={isLoading} zoom={13}>
-          <Marker key={`marker-${mapKey}`} position={position}>
+        <MapComponent center={position} isLoading={isLoading} zoom={13}>
+          <Marker position={position}>
             <Popup>
               <div>
                 <p>Lat: {position[0].toFixed(4)}</p>

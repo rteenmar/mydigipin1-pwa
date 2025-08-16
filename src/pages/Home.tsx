@@ -12,7 +12,7 @@ const HomePage = () => {
   const [udpin, setUdpin] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [mapKey, setMapKey] = useState(0); // Key to force map re-render
+  // Removed mapKey state
 
   // Function to update location data, ensuring coordinates are valid
   const updateLocationData = useCallback(async (inputLat: number, inputLng: number) => {
@@ -47,7 +47,7 @@ const HomePage = () => {
       }
       setAddress(newAddress);
       setUdpin(newUdpin);
-      setMapKey(prevKey => prevKey + 1);
+      // Removed setMapKey
       setIsLoading(false);
     }
   }, [initialMapCenter]);
@@ -210,9 +210,8 @@ const HomePage = () => {
 
         {/* Map Wrapper */}
         <div className="relative w-full" style={{ minHeight: '24rem', height: '24rem' }}>
-          <MapComponent key={mapKey} center={position} isLoading={isLoading}>
+          <MapComponent center={position} isLoading={isLoading}>
             <Marker
-              key={`marker-${mapKey}`} // Also key the marker
               position={position}
             >
               <Popup>Your location: {address || 'Unknown address'}</Popup>
