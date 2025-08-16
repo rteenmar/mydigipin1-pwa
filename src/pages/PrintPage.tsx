@@ -48,10 +48,10 @@ const PrintPage = () => {
   };
 
   // Function to generate QR code URL
-  const generateQrCodeUrl = (data: FromToLocationData | null, prefix: string) => {
+  const generateQrCodeUrl = (data: FromToLocationData | null) => {
     if (!data || !data.udpin) return '';
-    const qrData = `${prefix}:${data.name || ''}-${data.udpin}`;
-    return `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
+    // QR code now only contains the UDPIN
+    return `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(data.udpin)}`;
   };
 
   // Function to generate Barcode URL
@@ -140,14 +140,12 @@ const PrintPage = () => {
                 <div className="flex-shrink-0 flex flex-col items-center justify-center pr-2">
                   {fromOptions.qrCode && (
                     <div className="qr-code text-center mb-1">
-                      <img src={generateQrCodeUrl(fromData, 'FROM')} alt="From QR Code" className="w-20 h-20 mx-auto" />
-                      <p className="text-xs text-gray-600">Scan for location</p>
+                      <img src={generateQrCodeUrl(fromData)} alt="From QR Code" className="w-20 h-20 mx-auto" />
                     </div>
                   )}
                   {fromOptions.barcode && (
                     <div className="barcode text-center">
                       <img src={generateBarcodeUrl(fromData, 'FROM')} alt="From Barcode" className="h-10 mx-auto w-28 object-contain" />
-                      <p className="text-xs text-gray-600">Scan barcode</p>
                     </div>
                   )}
                 </div>
@@ -178,14 +176,12 @@ const PrintPage = () => {
                 <div className="flex-shrink-0 flex flex-col items-center justify-center pr-2">
                   {toOptions.qrCode && (
                     <div className="qr-code text-center mb-1">
-                      <img src={generateQrCodeUrl(toData, 'TO')} alt="To QR Code" className="w-20 h-20 mx-auto" />
-                      <p className="text-xs text-gray-600">Scan for location</p>
+                      <img src={generateQrCodeUrl(toData)} alt="To QR Code" className="w-20 h-20 mx-auto" />
                     </div>
                   )}
                   {toOptions.barcode && (
                     <div className="barcode text-center">
                       <img src={generateBarcodeUrl(toData, 'TO')} alt="To Barcode" className="h-10 mx-auto w-28 object-contain" />
-                      <p className="text-xs text-gray-600">Scan barcode</p>
                     </div>
                   )}
                 </div>
