@@ -24,13 +24,11 @@ interface LocationMarkerProps {
 // Interactive marker component
 const LocationMarker: React.FC<LocationMarkerProps> = ({ position, onPositionChange }) => {
   const map = useMap();
-  const [currentPosition, setCurrentPosition] = useState<[number, number] | null>(position);
   const markerRef = useRef<L.Marker>(null);
 
-  // Update local position when prop changes
+  // Update local position when prop changes and fly to it
   useEffect(() => {
     if (position) {
-      setCurrentPosition(position);
       map.flyTo(position, map.getZoom(), { duration: 0.5 });
     }
   }, [position, map]);
@@ -52,7 +50,7 @@ const LocationMarker: React.FC<LocationMarkerProps> = ({ position, onPositionCha
     },
   });
 
-  if (!currentPosition) return null;
+  if (!position) return null;
 
   return (
     <Marker
@@ -60,14 +58,14 @@ const LocationMarker: React.FC<LocationMarkerProps> = ({ position, onPositionCha
       eventHandlers={{
         dragend: handleDragEnd,
       }}
-      position={currentPosition}
+      position={position}
       ref={markerRef}
     >
       <Popup minWidth={200}>
         <div>
           <p>Drag me or click on the map to move</p>
-          <p>Lat: {currentPosition[0].toFixed(6)}</p>
-          <p>Lng: {currentPosition[1].toFixed(6)}</p>
+          <p>Lat: {position[0].toFixed(6)}</p>
+          <p>Lng: {position[1].toFixed(6)}</p>
         </div>
       </Popup>
     </Marker>
@@ -229,12 +227,12 @@ const FromAddress = () => {
   };
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col h-screen"> {/* Added h-screen for consistent height */}
       <div className="bg-blue-600 text-white p-4">
         <h1 className="text-xl font-bold">From Address</h1>
       </div>
       
-      <div className="flex flex-col">
+      <div className="flex-1 flex flex-col"> {/* flex-1 to make this section take available height */}
         <div className="p-4 border-b">
           <form onSubmit={handleSearch} className="flex gap-2">
               <input
@@ -258,7 +256,7 @@ const FromAddress = () => {
           </form>
         </div>
           
-          <div className="relative w-full" style={{ height: '300px' }}>
+          <div className="relative w-full flex-1"> {/* flex-1 to make map container take available height */}
             {/* MapContainer is always rendered with a default center */}
             <MapContainer
               center={position || initialMapCenter} // Use current position or default
