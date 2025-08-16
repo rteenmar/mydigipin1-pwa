@@ -136,22 +136,13 @@ const ToAddress = () => {
     setLocationName(address);
   };
 
-  if (!position) {
-    return (
-      <div className="flex flex-col h-screen items-center justify-center bg-gray-50">
-        <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-        <p className="text-gray-600 font-medium">Loading map...</p>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col h-screen">
       <div className="bg-blue-600 text-white p-4">
         <h1 className="text-xl font-bold">To Address</h1>
       </div>
 
-      <div className="flex-1 flex flex-col"> {/* Removed explicit height here */}
+      <div className="flex-1 flex flex-col">
         <div className="p-4 border-b">
           <form onSubmit={handleSearch} className="flex gap-2">
             <input
@@ -175,7 +166,7 @@ const ToAddress = () => {
           </form>
         </div>
 
-        <div className="relative w-full" style={{ height: '400px' }}>
+        <div className="relative w-full" style={{ height: '300px' }}> {/* Adjusted height here */}
           <MapContainer
             center={position || initialMapCenter} // Use current position or default
             zoom={13}
