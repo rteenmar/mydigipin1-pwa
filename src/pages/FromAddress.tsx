@@ -96,6 +96,8 @@ const FromAddress = () => {
 
   // Initialize with default position or loaded data
   useEffect(() => {
+    let isMounted = true; // Flag to prevent state updates on unmounted component
+
     const initPosition = async () => {
       try {
         setIsLoading(true);
@@ -110,17 +112,26 @@ const FromAddress = () => {
           setUdpin(savedData.udpin);
           setAddress(savedData.address);
         } else if (navigator.geolocation) {
-          const geoPos = await new Promise<GeolocationPosition>((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, {
-              enableHighAccuracy: true,
-              timeout: 10000,
-              maximumAge: 0
+          try {
+            const geoPos = await new Promise<GeolocationPosition>((resolve, reject) => {
+              navigator.geolocation.getCurrentPosition(resolve, reject, {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+              });
             });
-          });
-          newPosition = [geoPos.coords.latitude, geoPos.coords.longitude];
+            if (!isMounted) return; // Check if component is still mounted
+            newPosition = [geoPos.coords.latitude, geoPos.coords.longitude];
+          } catch (error) {
+            console.log('Using default position due to geolocation error:', error);
+            if (!isMounted) return; // Check if component is still mounted
+            newPosition = initialMapCenter; // Use default if geolocation fails
+          }
         } else {
           newPosition = initialMapCenter; // Default to India
         }
+
+        if (!isMounted) return; // Check if component is still mounted
 
         setPosition(newPosition);
         // Only update location data if it wasn't loaded from storage
@@ -132,13 +143,19 @@ const FromAddress = () => {
 
       } catch (error) {
         console.error('Error getting location, defaulting to India:', error);
+        if (!isMounted) return; // Check if component is still mounted
         setPosition(initialMapCenter);
         await updateLocationData(initialMapCenter[0], initialMapCenter[1]);
       }
     };
 
     initPosition();
+
+    return () => {
+      isMounted = false; // Cleanup: set flag to false when component unmounts
+    };
   }, [updateLocationData]);
+
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
