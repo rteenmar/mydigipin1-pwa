@@ -139,7 +139,7 @@ const PrintPage = () => {
               <div className="flex w-full h-full">
                 <div className="flex-shrink-0 flex flex-col items-center justify-center pr-2">
                   {fromOptions.qrCode && (
-                    <div className="qr-code text-center mb-1">
+                    <div className="qr-code text-center">
                       <img src={generateQrCodeUrl(fromData)} alt="From QR Code" className="w-20 h-20 mx-auto" />
                     </div>
                   )}
@@ -175,7 +175,7 @@ const PrintPage = () => {
               <div className="flex w-full h-full">
                 <div className="flex-shrink-0 flex flex-col items-center justify-center pr-2">
                   {toOptions.qrCode && (
-                    <div className="qr-code text-center mb-1">
+                    <div className="qr-code text-center">
                       <img src={generateQrCodeUrl(toData)} alt="To QR Code" className="w-20 h-20 mx-auto" />
                     </div>
                   )}

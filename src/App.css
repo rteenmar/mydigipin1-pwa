@@ -217,17 +217,17 @@ body {
 /* Print-specific styles */
 @media print {
   body {
-    background-color: #fff;
-    margin: 0;
-    padding: 0;
+    background-color: #fff !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
   .print-page {
-    max-width: 100%;
-    margin: 0;
-    padding: 0;
-    box-shadow: none;
-    border-radius: 0;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
   }
 
   .print-hidden,
@@ -241,89 +241,85 @@ body {
   }
 
   .print-layout {
-    display: flex;
-    flex-direction: column;
-    gap: 10px; /* Reduced space between slips for 2x4 size */
-    padding: 10px; /* Reduced padding for print layout */
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 5mm !important; /* Consistent spacing */
+    padding: 5mm !important; /* Consistent padding */
     border: none !important;
     box-shadow: none !important;
     background-color: transparent !important;
   }
 
   .address-slip {
-    width: 4in; /* Set to 4 inches wide */
-    height: 2in; /* Set to 2 inches tall */
-    overflow: hidden; /* Hide content that overflows the fixed size */
-    display: flex; /* Use flexbox for internal layout */
-    align-items: flex-start; /* Align items to the top */
-    justify-content: space-between; /* Space between left and right columns */
-    border: 1px solid #ccc;
-    padding: 5px; /* Adjusted padding for smaller size */
-    margin-bottom: 10px; /* Space between slips */
-    page-break-inside: avoid; /* Avoid breaking a slip across pages */
-    background-color: #fff;
-    box-shadow: none;
-    border-radius: 0;
-    font-size: 0.7em; /* Make font smaller to fit more content */
+    width: 4in !important; /* Explicitly set width */
+    height: 2in !important; /* Explicitly set height */
+    overflow: hidden !important; /* Crucial for fixed size */
+    display: flex !important; /* Ensure flex layout */
+    align-items: flex-start !important; /* Align content to top */
+    justify-content: space-between !important; /* Space between left/right */
+    border: 1px solid #ccc !important; /* Make border visible for debugging */
+    padding: 5mm !important; /* Consistent padding */
+    margin-bottom: 5mm !important; /* Consistent spacing between slips */
+    page-break-inside: avoid !important; /* Keep slips together */
+    background-color: #fff !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    font-size: 0.7em !important; /* Smaller font for more content */
   }
 
   .address-slip:last-child {
-    margin-bottom: 0;
-  }
-
-  .address-slip h4 { /* This rule is now redundant as h4 is removed from HTML */
-    display: none;
+    margin-bottom: 0 !important;
   }
 
   .address-slip .flex-shrink-0 { /* Left column for QR/Barcode */
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding-right: 5px; /* Space between codes and text */
-    flex-basis: 100px; /* Give fixed width for codes */
-    min-width: 100px;
-    max-width: 100px;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding-right: 3mm !important; /* Space between codes and text */
+    flex-basis: 30mm !important; /* Fixed width for codes (approx 1.2in) */
+    min-width: 30mm !important;
+    max-width: 30mm !important;
   }
 
   .address-slip .flex-grow { /* Right column for text details */
-    flex-grow: 1;
-    min-width: 0; /* Allow content to shrink */
-    word-wrap: break-word; /* Ensure long words break */
-    overflow-wrap: break-word;
+    flex-grow: 1 !important;
+    min-width: 0 !important; /* Allow content to shrink */
+    word-wrap: break-word !important; /* Ensure long words break */
+    overflow-wrap: break-word !important;
   }
 
   .address-slip .qr-code,
   .address-slip .barcode {
-    margin-top: 0;
-    margin-bottom: 3px; /* Reduced space between QR and barcode */
-    margin-right: 0;
+    margin: 0 !important; /* Remove any default margins */
+    padding: 0 !important;
+    text-align: center !important;
   }
 
   .address-slip .qr-code img {
-    width: 70px; /* Smaller QR code to fit */
-    height: 70px;
+    width: 20mm !important; /* Smaller QR code to fit */
+    height: 20mm !important;
   }
 
   .address-slip .barcode img {
-    width: 90px; /* Smaller barcode to fit */
-    height: 35px; /* Adjusted height */
+    width: 30mm !important; /* Smaller barcode to fit */
+    height: 10mm !important; /* Adjusted height */
   }
 
   .address-slip p {
-    font-size: 0.9em; /* Adjusted font size for details within the smaller slip */
-    line-height: 1.2; /* Tighter line spacing */
-    margin-bottom: 0; /* Remove default paragraph margin */
+    font-size: 0.9em !important; /* Adjusted font size for details within the smaller slip */
+    line-height: 1.2 !important; /* Tighter line spacing */
+    margin-bottom: 0 !important; /* Remove default paragraph margin */
   }
   .address-slip p strong {
-    display: inline-block; /* Ensure strong doesn't break line */
-    min-width: 45px; /* Align labels */
-    text-align: right;
-    margin-right: 5px;
+    display: inline-block !important; /* Ensure strong doesn't break line */
+    min-width: 15mm !important; /* Align labels */
+    text-align: right !important;
+    margin-right: 2mm !important;
   }
   .address-slip p span {
-    display: inline-block;
-    vertical-align: top;
-    max-width: calc(100% - 55px); /* Adjust max-width for content */
+    display: inline-block !important;
+    vertical-align: top !important;
+    max-width: calc(100% - 17mm) !important; /* Adjust max-width for content */
   }
 }
