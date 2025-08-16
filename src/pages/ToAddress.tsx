@@ -7,7 +7,7 @@ import MapComponent from '../components/MapComponent'; // Import the new MapComp
 
 const ToAddress = () => {
   const initialMapCenter: [number, number] = [20.5937, 78.9629]; // Default to India
-  const [position, setPosition] = useState<[number, number]>(initialMapCenter); // Initialize with default
+  const [position, setPosition] = useState<[number, number] | null>(null); // Initialize as null
   const [address, setAddress] = useState('');
   const [locationName, setLocationName] = useState('');
   const [udpin, setUdpin] = useState('');
@@ -77,7 +77,6 @@ const ToAddress = () => {
       }
       // No geolocation for ToAddress, so currentLat/Lng remain initialMapCenter if no valid savedData
 
-      // Always call updateLocationData to ensure consistent validation and state updates
       await updateLocationData(currentLat, currentLng);
     };
     initPosition();
@@ -181,6 +180,23 @@ const ToAddress = () => {
       alert('Cannot save: location not set.');
     }
   };
+
+  // Conditional rendering of MapComponent and main content
+  if (!position) {
+    return (
+      <div className="flex flex-col h-screen">
+        <div className="bg-blue-600 text-white p-4">
+          <h1 className="text-xl font-bold">To Address</h1>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+            <p className="mt-2 text-gray-600">Loading map...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-screen">
