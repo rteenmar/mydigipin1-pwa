@@ -48,19 +48,14 @@ body {
   border-bottom: 1px solid #eaeaea;
 }
 
-/* Map container styles */
+/* Map container styles - Adjusted */
 .leaflet-container {
-  width: 100% !important;
-  height: 100% !important;
-  min-height: 400px;
+  width: 100%; /* Keep width 100% */
+  /* Removed height: 100% !important; and min-height: 400px; */
   border-radius: var(--border-radius);
   box-shadow: var(--shadow);
   z-index: 0;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  /* Removed position: absolute; top: 0; left: 0; right: 0; bottom: 0; */
 }
 
 /* Ensure the map takes up space in its container */
