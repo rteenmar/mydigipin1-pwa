@@ -7,7 +7,7 @@ import MapComponent from '../components/MapComponent'; // Import the new MapComp
 
 const ToAddress = () => {
   const initialMapCenter: [number, number] = [20.5937, 78.9629]; // Default to India
-  const [position, setPosition] = useState<[number, number] | null>(null); // Initialize as null
+  const [position, setPosition] = useState<[number, number]>(initialMapCenter); // Initialize with default
   const [address, setAddress] = useState('');
   const [locationName, setLocationName] = useState('');
   const [udpin, setUdpin] = useState('');
@@ -182,7 +182,7 @@ const ToAddress = () => {
   };
 
   // Conditional rendering of MapComponent and main content
-  if (!position) {
+  if (isLoading && !position) { // Only show loading if position is null and still loading
     return (
       <div className="flex flex-col h-screen">
         <div className="bg-blue-600 text-white p-4">
