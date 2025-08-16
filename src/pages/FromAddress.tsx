@@ -207,7 +207,7 @@ const FromAddress = () => {
         <h1 className="text-xl font-bold">From Address</h1>
       </div>
       
-      <div className="flex-1 flex flex-col">
+      <div className="flex flex-col"> {/* Removed flex-1 here */}
         <div className="p-4 border-b">
           <form onSubmit={handleSearch} className="flex gap-2">
               <input
@@ -231,7 +231,7 @@ const FromAddress = () => {
           </form>
         </div>
           
-          <div className="relative w-full" style={{ height: '300px' }}> {/* Adjusted height here */}
+          <div className="relative w-full" style={{ height: '300px' }}>
             {/* MapContainer is always rendered with a default center */}
             <MapContainer
               center={position || initialMapCenter} // Use current position or default

@@ -142,7 +142,7 @@ const ToAddress = () => {
         <h1 className="text-xl font-bold">To Address</h1>
       </div>
 
-      <div className="flex-1 flex flex-col">
+      <div className="flex flex-col"> {/* Removed flex-1 here */}
         <div className="p-4 border-b">
           <form onSubmit={handleSearch} className="flex gap-2">
             <input
@@ -166,7 +166,7 @@ const ToAddress = () => {
           </form>
         </div>
 
-        <div className="relative w-full" style={{ height: '300px' }}> {/* Adjusted height here */}
+        <div className="relative w-full" style={{ height: '300px' }}>
           <MapContainer
             center={position || initialMapCenter} // Use current position or default
             zoom={13}
