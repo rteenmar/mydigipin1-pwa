@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { generateUDPIN, formatUDPIN } from '../lib/udpin';
@@ -7,7 +7,7 @@ import L from 'leaflet';
 import { saveFromAddressData, loadFromAddressData } from '../lib/appStorage'; // Import storage functions
 
 // Fix for default marker icons in Leaflet with React
-// @ts-ignore
+// @ts-expect-error
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
