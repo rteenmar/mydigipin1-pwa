@@ -16,12 +16,12 @@ const HomePage = () => {
 
   // Function to update location data, ensuring coordinates are valid
   const updateLocationData = useCallback(async (inputLat: number, inputLng: number) => {
-    let newPosition: [number, number] = initialMapCenter;
+    let newPosition: [number, number] = initialMapCenter; // Default fallback
     let newAddress = 'Address not available';
     let newUdpin = 'N/A';
 
     try {
-      if (isNaN(inputLat) || isNaN(inputLng)) {
+      if (isNaN(inputLat) || isNaN(inputLng)) { // Check here
         console.error('Invalid coordinates provided to updateLocationData:', inputLat, inputLng);
         // newPosition, newAddress, newUdpin remain as initial/default
       } else {
@@ -38,8 +38,13 @@ const HomePage = () => {
       console.error('Error in updateLocationData processing:', error);
       // newPosition, newAddress, newUdpin remain as initial/default
     } finally {
-      // Always update state and mapKey at the end of the process
-      setPosition(newPosition);
+      // Final check before setting state to ensure no NaN values
+      if (isNaN(newPosition[0]) || isNaN(newPosition[1])) {
+        console.error('Attempted to set NaN position, falling back to initialMapCenter.');
+        setPosition(initialMapCenter); // Force valid coordinates
+      } else {
+        setPosition(newPosition);
+      }
       setAddress(newAddress);
       setUdpin(newUdpin);
       setMapKey(prevKey => prevKey + 1);

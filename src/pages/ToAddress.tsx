@@ -41,8 +41,13 @@ const ToAddress = () => {
       console.error('Error in updateLocationData processing:', error);
       // newPosition, newAddress, newUdpin remain as initial/default
     } finally {
-      // Always update state and mapKey at the end of the process
-      setPosition(newPosition);
+      // Final check before setting state to ensure no NaN values
+      if (isNaN(newPosition[0]) || isNaN(newPosition[1])) {
+        console.error('Attempted to set NaN position, falling back to initialMapCenter.');
+        setPosition(initialMapCenter); // Force valid coordinates
+      } else {
+        setPosition(newPosition);
+      }
       setAddress(newAddress);
       setUdpin(newUdpin);
       setMapKey(prevKey => prevKey + 1);
@@ -174,160 +179,158 @@ const ToAddress = () => {
   };
 
   return (
-    <>
-      <div className="flex flex-col h-screen">
-        <div className="bg-blue-600 text-white p-4">
-          <h1 className="text-xl font-bold">To Address</h1>
+    <div className="flex flex-col h-screen">
+      <div className="bg-blue-600 text-white p-4">
+        <h1 className="text-xl font-bold">To Address</h1>
+      </div>
+
+      <div className="flex-1 flex flex-col">
+        <div className="p-4 border-b">
+          <form onSubmit={handleSearch} className="flex gap-2">
+            <input
+              id="to-location-search"
+              name="toLocationSearch"
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search location..."
+              aria-label="Search for a location"
+              className="flex-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              disabled={isLoading}
+            />
+            <button
+              type="submit"
+              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Searching...' : 'Search'}
+            </button>
+          </form>
         </div>
 
-        <div className="flex-1 flex flex-col">
-          <div className="p-4 border-b">
-            <form onSubmit={handleSearch} className="flex gap-2">
+        <MapComponent key={mapKey} center={position} isLoading={isLoading} zoom={13}>
+          <Marker key={`marker-${mapKey}`} position={position}>
+            <Popup>
+              <div>
+                <p>Lat: {position[0].toFixed(4)}</p>
+                <p>Lng: {position[1].toFixed(4)}</p>
+                <p>UDPIN: {udpin}</p>
+              </div>
+            </Popup>
+          </Marker>
+        </MapComponent>
+
+        <div className="p-4 border-t">
+          <div className="mb-4">
+            <label htmlFor="to-name" className="block text-sm font-medium text-gray-700 mb-1">
+              Name
+            </label>
+            <input
+              id="to-name"
+              name="toName"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter recipient's name"
+              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              aria-label="Recipient's name"
+            />
+          </div>
+
+          <div className="mb-4">
+            <label htmlFor="to-phone" className="block text-sm font-medium text-gray-700 mb-1">
+              Phone no
+            </label>
+            <input
+              id="to-phone"
+              name="toPhone"
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="Enter recipient's phone number"
+              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              aria-label="Recipient's phone number"
+            />
+          </div>
+
+          <div className="form-group mb-4">
+            <label htmlFor="to-location-address" className="block text-sm font-medium text-gray-700 mb-1">
+              Geo Location (Address):
+            </label>
+            <div className="input-group">
+              <textarea
+                id="to-location-address"
+                name="toLocationAddress"
+                value={address}
+                readOnly
+                aria-label="Location address"
+                className="w-full p-2 border border-gray-300 rounded-md bg-gray-50"
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <div className="form-group mb-4">
+            <label htmlFor="to-location-name" className="block text-sm font-medium text-gray-700 mb-1">
+              My Location Name:
+            </label>
+            <div className="flex gap-2">
               <input
-                id="to-location-search"
-                name="toLocationSearch"
-                type="search"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search location..."
-                aria-label="Search for a location"
+                id="to-location-name"
+                name="toLocationName"
+                type="text"
+                value={locationName}
+                onChange={(e) => setLocationName(e.target.value)}
+                placeholder="Enter location name"
                 className="flex-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                disabled={isLoading}
+                aria-label="Location name"
               />
               <button
-                type="submit"
+                type="button"
+                onClick={copyAddressToLocation}
+                className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              >
+                Copy Address to Name
+              </button>
+            </div>
+          </div>
+
+          <div className="form-group mb-4">
+            <label htmlFor="to-udpin" className="block text-sm font-medium text-gray-700 mb-1">
+              Digital Pin:
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                id="to-udpin"
+                name="toUdpin"
+                type="text"
+                value={udpin}
+                onChange={(e) => setUdpin(e.target.value)}
+                placeholder="Enter UDPIN to decode"
+                className="flex-1 p-2 border border-gray-300 rounded-md bg-gray-50 font-mono"
+                aria-label="UDPIN code"
+              />
+              <button
+                type="button"
+                onClick={handleDecodeUDPIN}
                 className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 disabled={isLoading}
               >
-                {isLoading ? 'Searching...' : 'Search'}
+                Decode
               </button>
-            </form>
+            </div>
           </div>
-
-          <MapComponent key={mapKey} center={position} isLoading={isLoading} zoom={13}>
-            <Marker key={`marker-${mapKey}`} position={position}>
-              <Popup>
-                <div>
-                  <p>Lat: {position[0].toFixed(4)}</p>
-                  <p>Lng: {position[1].toFixed(4)}</p>
-                  <p>UDPIN: {udpin}</p>
-                </div>
-              </Popup>
-            </Marker>
-          </MapComponent>
-
-          <div className="p-4 border-t">
-            <div className="mb-4">
-              <label htmlFor="to-name" className="block text-sm font-medium text-gray-700 mb-1">
-                Name
-              </label>
-              <input
-                id="to-name"
-                name="toName"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Enter recipient's name"
-                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                aria-label="Recipient's name"
-              />
-            </div>
-
-            <div className="mb-4">
-              <label htmlFor="to-phone" className="block text-sm font-medium text-gray-700 mb-1">
-                Phone no
-              </label>
-              <input
-                id="to-phone"
-                name="toPhone"
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="Enter recipient's phone number"
-                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                aria-label="Recipient's phone number"
-              />
-            </div>
-
-            <div className="form-group mb-4">
-              <label htmlFor="to-location-address" className="block text-sm font-medium text-gray-700 mb-1">
-                Geo Location (Address):
-              </label>
-              <div className="input-group">
-                <textarea
-                  id="to-location-address"
-                  name="toLocationAddress"
-                  value={address}
-                  readOnly
-                  aria-label="Location address"
-                  className="w-full p-2 border border-gray-300 rounded-md bg-gray-50"
-                  rows={3}
-                />
-              </div>
-            </div>
-
-            <div className="form-group mb-4">
-              <label htmlFor="to-location-name" className="block text-sm font-medium text-gray-700 mb-1">
-                My Location Name:
-              </label>
-              <div className="flex gap-2">
-                <input
-                  id="to-location-name"
-                  name="toLocationName"
-                  type="text"
-                  value={locationName}
-                  onChange={(e) => setLocationName(e.target.value)}
-                  placeholder="Enter location name"
-                  className="flex-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  aria-label="Location name"
-                />
-                <button
-                  type="button"
-                  onClick={copyAddressToLocation}
-                  className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                >
-                  Copy Address to Name
-                </button>
-              </div>
-            </div>
-
-            <div className="form-group mb-4">
-              <label htmlFor="to-udpin" className="block text-sm font-medium text-gray-700 mb-1">
-                Digital Pin:
-              </label>
-              <div className="flex items-center gap-2">
-                <input
-                  id="to-udpin"
-                  name="toUdpin"
-                  type="text"
-                  value={udpin}
-                  onChange={(e) => setUdpin(e.target.value)}
-                  placeholder="Enter UDPIN to decode"
-                  className="flex-1 p-2 border border-gray-300 rounded-md bg-gray-50 font-mono"
-                  aria-label="UDPIN code"
-                />
-                <button
-                  type="button"
-                  onClick={handleDecodeUDPIN}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  disabled={isLoading}
-                >
-                  Decode
-                </button>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={handleSaveLocation}
-              className="w-full bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Saving...' : 'Save Location'}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={handleSaveLocation}
+            className="w-full bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+            disabled={isLoading}
+          >
+            {isLoading ? 'Saving...' : 'Save Location'}
+          </button>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

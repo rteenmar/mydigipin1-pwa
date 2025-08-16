@@ -27,7 +27,8 @@ const MapUpdater: React.FC<MapUpdaterProps> = ({ center, isLoading, mapRef }) =>
   }, [isLoading, mapRef]);
 
   useEffect(() => {
-    if (center && mapRef.current) {
+    // Ensure center is valid before flying to it
+    if (center && !isNaN(center[0]) && !isNaN(center[1]) && mapRef.current) {
       map.flyTo(center, map.getZoom(), {
         animate: true,
         duration: 0.5,
@@ -47,11 +48,17 @@ interface MapComponentProps {
 
 const MapComponent: React.FC<MapComponentProps> = ({ center, zoom = 15, isLoading, children }) => {
   const mapRef = useRef<L.Map>(null);
+  const initialMapCenter: [number, number] = [20.5937, 78.9629]; // Default to India
+
+  // Ensure center is always valid before passing to MapContainer and MapUpdater
+  const validatedCenter: [number, number] = (isNaN(center[0]) || isNaN(center[1]))
+    ? initialMapCenter // Fallback to a known good default if somehow NaN gets here
+    : center;
 
   return (
     <div className="relative w-full flex-1">
       <MapContainer
-        center={center}
+        center={validatedCenter} // Use validatedCenter here
         zoom={zoom}
         style={{ height: '100%', width: '100%' }}
         zoomControl={true}
@@ -62,7 +69,7 @@ const MapComponent: React.FC<MapComponentProps> = ({ center, zoom = 15, isLoadin
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
-        <MapUpdater center={center} isLoading={isLoading} mapRef={mapRef} />
+        <MapUpdater center={validatedCenter} isLoading={isLoading} mapRef={mapRef} /> {/* Use validatedCenter here */}
         {children}
       </MapContainer>
 
