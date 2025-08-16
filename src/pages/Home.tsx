@@ -6,18 +6,17 @@ import { reverseGeocode } from '../lib/geocoding';
 import MapComponent from '../components/MapComponent'; // Import the new MapComponent
 
 const HomePage = () => {
-  const [position, setPosition] = useState<[number, number] | null>(null);
+  const initialMapCenter: [number, number] = [20.5937, 78.9629]; // Default to India
+  const [position, setPosition] = useState<[number, number]>(initialMapCenter); // Initialize with default
   const [address, setAddress] = useState('');
   const [udpin, setUdpin] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const initialMapCenter: [number, number] = [20.5937, 78.9629]; // Default to India
-
   // Update location data function
   const updateLocationData = useCallback(async (pos: [number, number]) => {
     try {
-      // Ensure lat and lng are numbers before passing to generateUDPIN and reverseGeocode
+      setIsLoading(true);
       const lat = pos[0];
       const lng = pos[1];
 
@@ -25,6 +24,7 @@ const HomePage = () => {
         console.error('Invalid coordinates passed to updateLocationData:', pos);
         setAddress('Invalid coordinates');
         setUdpin('N/A');
+        setPosition(initialMapCenter); // Fallback to default if NaN
         return 'Invalid coordinates';
       }
 
@@ -35,16 +35,18 @@ const HomePage = () => {
 
       setUdpin(newUdpin);
       setAddress(addr);
+      setPosition(pos); // Set valid position
 
       return addr;
     } catch (error) {
       console.error('Error updating location data:', error);
       setAddress('Address not available');
+      setPosition(initialMapCenter); // Fallback to default on error
       return 'Address not available';
     } finally {
       setIsLoading(false); // Set loading to false after data is fetched
     }
-  }, []);
+  }, [initialMapCenter]);
 
   // Initialize map position and data
   useEffect(() => {
@@ -53,8 +55,6 @@ const HomePage = () => {
     const initMap = async () => {
       try {
         setIsLoading(true);
-
-        // Get current position or use default
         let newPosition: [number, number];
 
         if (navigator.geolocation) {
@@ -69,7 +69,6 @@ const HomePage = () => {
 
             if (!isMounted) return;
 
-            // Explicitly check for NaN here
             if (isNaN(geoPos.coords.latitude) || isNaN(geoPos.coords.longitude)) {
               console.warn('Geolocation returned NaN coordinates, falling back to default.');
               newPosition = initialMapCenter;
@@ -106,7 +105,7 @@ const HomePage = () => {
     return () => {
       isMounted = false;
     };
-  }, [updateLocationData]);
+  }, [updateLocationData, initialMapCenter]);
 
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -115,16 +114,35 @@ const HomePage = () => {
 
     try {
       setIsLoading(true);
-      // For now, we'll just log the search query since searchLocation isn't implemented
-      console.log('Searching for:', searchQuery);
-      // In a real implementation, you would call searchLocation here
-      // const results = await searchLocation(searchQuery);
-      // if (results.length > 0) {
-      //   const newPosition: [number, number] = [results[0].lat, results[0].lon];
-      //   handlePositionChange(newPosition);
-      // }
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch location');
+      }
+
+      const data = await response.json();
+
+      if (data && data.length > 0) {
+        const { lat, lon } = data[0];
+        const parsedLat = parseFloat(lat);
+        const parsedLon = parseFloat(lon);
+
+        if (!isNaN(parsedLat) && !isNaN(parsedLon)) {
+          await updateLocationData([parsedLat, parsedLon]);
+        } else {
+          alert('Received invalid coordinates from search. Please try a different search term.');
+          setPosition(initialMapCenter); // Fallback on invalid search result
+        }
+      } else {
+        alert('No results found. Please try a different search term.');
+        setPosition(initialMapCenter); // Fallback if no results
+      }
     } catch (error) {
       console.error('Error searching location:', error);
+      alert('Failed to find location. Please try again.');
+      setPosition(initialMapCenter); // Fallback on search error
     } finally {
       setIsLoading(false);
     }
@@ -196,7 +214,7 @@ const HomePage = () => {
 
         {/* Map Wrapper */}
         <div className="relative w-full" style={{ minHeight: '24rem', height: '24rem' }}>
-          <MapComponent center={position || initialMapCenter} isLoading={isLoading}>
+          <MapComponent center={position} isLoading={isLoading}>
             {position && (
               <Marker
                 position={position}

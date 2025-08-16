@@ -6,7 +6,8 @@ import { saveToAddressData, loadToAddressData } from '../lib/appStorage';
 import MapComponent from '../components/MapComponent'; // Import the new MapComponent
 
 const ToAddress = () => {
-  const [position, setPosition] = useState<[number, number] | null>(null);
+  const initialMapCenter: [number, number] = [20.5937, 78.9629]; // Default to India
+  const [position, setPosition] = useState<[number, number]>(initialMapCenter); // Initialize with default
   const [address, setAddress] = useState('');
   const [locationName, setLocationName] = useState('');
   const [udpin, setUdpin] = useState('');
@@ -15,18 +16,15 @@ const ToAddress = () => {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
 
-  const initialMapCenter: [number, number] = [20.5937, 78.9629]; // Default to India
-
   const updateLocationData = useCallback(async (lat: number, lng: number) => {
     try {
       setIsLoading(true);
-      // Add explicit NaN check here too, just in case
       if (isNaN(lat) || isNaN(lng)) {
         console.error('Invalid coordinates passed to updateLocationData:', lat, lng);
         setUdpin('N/A');
         setAddress('Invalid coordinates');
-        setPosition(null); // Or set to a default valid position if preferred
-        return; // Exit early
+        setPosition(initialMapCenter); // Fallback to default if NaN
+        return;
       }
       const [newUdpin, addr] = await Promise.all([
         formatUDPIN(generateUDPIN(lat, lng)),
@@ -39,10 +37,11 @@ const ToAddress = () => {
 
     } catch (error) {
       console.error('Error updating location:', error);
+      setPosition(initialMapCenter); // Fallback to default on error
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [initialMapCenter]);
 
   useEffect(() => {
     const initPosition = async () => {
@@ -71,12 +70,13 @@ const ToAddress = () => {
         }
       } catch (error) {
         console.error('Error initializing map:', error);
+        setPosition(initialMapCenter); // Fallback to default on error
       } finally {
         setIsLoading(false);
       }
     };
     initPosition();
-  }, [updateLocationData]);
+  }, [updateLocationData, initialMapCenter]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,13 +101,16 @@ const ToAddress = () => {
           await updateLocationData(parsedLat, parsedLon);
         } else {
           alert('Received invalid coordinates from search. Please try a different search term.');
+          setPosition(initialMapCenter); // Fallback on invalid search result
         }
       } else {
         alert('No results found. Please try a different search term.');
+        setPosition(initialMapCenter); // Fallback if no results
       }
     } catch (error) {
       console.error('Error searching location:', error);
       alert('Failed to find location. Please try again.');
+      setPosition(initialMapCenter); // Fallback on search error
     } finally {
       setIsLoading(false);
     }
@@ -126,10 +129,16 @@ const ToAddress = () => {
     try {
       setIsLoading(true);
       const { lat, lng } = decodeUDPIN(udpin);
-      await updateLocationData(lat, lng);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        await updateLocationData(lat, lng);
+      } else {
+        alert('Decoded UDPIN resulted in invalid coordinates. Please check the UDPIN.');
+        setPosition(initialMapCenter); // Fallback on invalid decode
+      }
     } catch (error) {
       console.error('Error decoding UDPIN:', error);
       alert('Failed to decode UDPIN. Please check the format.');
+      setPosition(initialMapCenter); // Fallback on decode error
     } finally {
       setIsLoading(false);
     }
@@ -185,18 +194,16 @@ const ToAddress = () => {
           </form>
         </div>
 
-        <MapComponent center={position || initialMapCenter} isLoading={isLoading} zoom={13}>
-          {position && (
-            <Marker position={position}>
-              <Popup>
-                <div>
-                  <p>Lat: {position[0].toFixed(4)}</p>
-                  <p>Lng: {position[1].toFixed(4)}</p>
-                  <p>UDPIN: {udpin}</p>
-                </div>
-              </Popup>
-            </Marker>
-          )}
+        <MapComponent center={position} isLoading={isLoading} zoom={13}>
+          <Marker position={position}>
+            <Popup>
+              <div>
+                <p>Lat: {position[0].toFixed(4)}</p>
+                <p>Lng: {position[1].toFixed(4)}</p>
+                <p>UDPIN: {udpin}</p>
+              </div>
+            </Popup>
+          </Marker>
         </MapComponent>
 
         <div className="p-4 border-t">

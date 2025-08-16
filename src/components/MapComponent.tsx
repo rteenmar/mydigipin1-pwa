@@ -12,7 +12,7 @@ L.Icon.Default.mergeOptions({
 });
 
 interface MapUpdaterProps {
-  center: [number, number] | null;
+  center: [number, number]; // Now guaranteed to be valid
   isLoading: boolean;
   mapRef: React.RefObject<L.Map | null>;
 }
@@ -39,7 +39,7 @@ const MapUpdater: React.FC<MapUpdaterProps> = ({ center, isLoading, mapRef }) =>
 };
 
 interface MapComponentProps {
-  center: [number, number];
+  center: [number, number]; // Now guaranteed to be valid
   zoom?: number;
   isLoading: boolean;
   children: React.ReactNode;

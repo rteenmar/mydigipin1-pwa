@@ -7,7 +7,7 @@ import MapComponent from '../components/MapComponent'; // Import the new MapComp
 
 // Define props for LocationMarker component
 interface LocationMarkerProps {
-  position: [number, number] | null;
+  position: [number, number]; // Position is now guaranteed to be valid
   onPositionChange: (lat: number, lng: number) => Promise<void>;
 }
 
@@ -40,8 +40,6 @@ const LocationMarker: React.FC<LocationMarkerProps> = ({ position, onPositionCha
     },
   });
 
-  if (!position) return null;
-
   return (
     <Marker
       draggable={true}
@@ -63,7 +61,8 @@ const LocationMarker: React.FC<LocationMarkerProps> = ({ position, onPositionCha
 };
 
 const FromAddress = () => {
-  const [position, setPosition] = useState<[number, number] | null>(null);
+  const initialMapCenter: [number, number] = [20.5937, 78.9629]; // Default to India
+  const [position, setPosition] = useState<[number, number]>(initialMapCenter); // Initialize with default
   const [address, setAddress] = useState('');
   const [locationName, setLocationName] = useState('');
   const [udpin, setUdpin] = useState('');
@@ -72,19 +71,16 @@ const FromAddress = () => {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
 
-  const initialMapCenter: [number, number] = [20.5937, 78.9629]; // Default to India
-
   // Function to update location data
   const updateLocationData = useCallback(async (lat: number, lng: number) => {
     try {
       setIsLoading(true);
-      // Add explicit NaN check here too, just in case
       if (isNaN(lat) || isNaN(lng)) {
         console.error('Invalid coordinates passed to updateLocationData:', lat, lng);
         setUdpin('N/A');
         setAddress('Invalid coordinates');
-        setPosition(null); // Or set to a default valid position if preferred
-        return; // Exit early
+        setPosition(initialMapCenter); // Fallback to default if NaN
+        return;
       }
       const [newUdpin, addr] = await Promise.all([
         formatUDPIN(generateUDPIN(lat, lng)),
@@ -97,14 +93,15 @@ const FromAddress = () => {
 
     } catch (error) {
       console.error('Error updating location:', error);
+      setPosition(initialMapCenter); // Fallback to default on error
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [initialMapCenter]);
 
   // Initialize with default position or loaded data
   useEffect(() => {
-    let isMounted = true; // Flag to prevent state updates on unmounted component
+    let isMounted = true;
 
     const initPosition = async () => {
       try {
@@ -128,9 +125,8 @@ const FromAddress = () => {
                 maximumAge: 0
               });
             });
-            if (!isMounted) return; // Check if component is still mounted
+            if (!isMounted) return;
             
-            // Explicitly check for NaN here
             if (isNaN(geoPos.coords.latitude) || isNaN(geoPos.coords.longitude)) {
               console.warn('Geolocation returned NaN coordinates, falling back to default.');
               newPosition = initialMapCenter;
@@ -140,14 +136,14 @@ const FromAddress = () => {
 
           } catch (error) {
             console.log('Using default position due to geolocation error:', error);
-            if (!isMounted) return; // Check if component is still mounted
+            if (!isMounted) return;
             newPosition = initialMapCenter; // Use default if geolocation fails
           }
         } else {
           newPosition = initialMapCenter; // Default to India
         }
 
-        if (!isMounted) return; // Check if component is still mounted
+        if (!isMounted) return;
 
         setPosition(newPosition);
         // Only update location data if it wasn't loaded from storage
@@ -159,7 +155,7 @@ const FromAddress = () => {
 
       } catch (error) {
         console.error('Error getting location, defaulting to India:', error);
-        if (!isMounted) return; // Check if component is still mounted
+        if (!isMounted) return;
         setPosition(initialMapCenter);
         await updateLocationData(initialMapCenter[0], initialMapCenter[1]);
       }
@@ -168,9 +164,9 @@ const FromAddress = () => {
     initPosition();
 
     return () => {
-      isMounted = false; // Cleanup: set flag to false when component unmounts
+      isMounted = false;
     };
-  }, [updateLocationData]);
+  }, [updateLocationData, initialMapCenter]);
 
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -198,13 +194,16 @@ const FromAddress = () => {
           await updateLocationData(parsedLat, parsedLon);
         } else {
           alert('Received invalid coordinates from search. Please try a different search term.');
+          setPosition(initialMapCenter); // Fallback on invalid search result
         }
       } else {
         alert('No results found. Please try a different search term.');
+        setPosition(initialMapCenter); // Fallback if no results
       }
     } catch (error) {
       console.error('Error searching location:', error);
       alert('Failed to find location. Please try again.');
+      setPosition(initialMapCenter); // Fallback on search error
     } finally {
       setIsLoading(false);
     }
@@ -260,13 +259,11 @@ const FromAddress = () => {
           </form>
         </div>
 
-        <MapComponent center={position || initialMapCenter} isLoading={isLoading}>
-          {position && (
-            <LocationMarker
-              position={position}
-              onPositionChange={updateLocationData}
-            />
-          )}
+        <MapComponent center={position} isLoading={isLoading}>
+          <LocationMarker
+            position={position}
+            onPositionChange={updateLocationData}
+          />
         </MapComponent>
 
         <div className="p-4 border-t">
