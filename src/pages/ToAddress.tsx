@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { generateUDPIN, decodeUDPIN, formatUDPIN, isValidUDPIN } from '../lib/udpin';
 import { reverseGeocode } from '../lib/geocoding';
@@ -14,6 +14,28 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
 });
 
+// Helper component to update map view and invalidate size
+const MapUpdater = ({ position, isLoading, mapRef }: { position: [number, number] | null; isLoading: boolean; mapRef: React.RefObject<L.Map | null> }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    if (mapRef.current && !isLoading) {
+      mapRef.current.invalidateSize();
+    }
+  }, [isLoading, mapRef]);
+
+  useEffect(() => {
+    if (position && mapRef.current) {
+      map.flyTo(position, map.getZoom(), {
+        animate: true,
+        duration: 0.5,
+      });
+    }
+  }, [position, map]);
+
+  return null;
+};
+
 const ToAddress = () => {
   const [position, setPosition] = useState<[number, number] | null>(null);
   const [address, setAddress] = useState('');
@@ -22,6 +44,8 @@ const ToAddress = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const mapRef = useRef<L.Map>(null);
+
+  const initialMapCenter: [number, number] = [20.5937, 78.9629]; // Default to India
 
   const updateLocationData = useCallback(async (lat: number, lng: number) => {
     try {
@@ -35,12 +59,6 @@ const ToAddress = () => {
       setAddress(addr);
       setPosition([lat, lng]);
       
-      if (mapRef.current) {
-        mapRef.current.flyTo([lat, lng], mapRef.current.getZoom(), {
-          animate: true,
-          duration: 0.5,
-        });
-      }
     } catch (error) {
       console.error('Error updating location:', error);
     } finally {
@@ -53,7 +71,8 @@ const ToAddress = () => {
       try {
         setIsLoading(true);
         // Default to India if no geolocation
-        await updateLocationData(20.5937, 78.9629); 
+        setPosition(initialMapCenter); // Set initial position for map to render
+        await updateLocationData(initialMapCenter[0], initialMapCenter[1]); 
       } catch (error) {
         console.error('Error initializing map:', error);
       } finally {
@@ -158,7 +177,7 @@ const ToAddress = () => {
 
         <div className="flex-1 relative">
           <MapContainer
-            center={position}
+            center={position} // Use current position
             zoom={13}
             style={{ height: '100%', width: '100%' }}
             zoomControl={true}
@@ -171,15 +190,18 @@ const ToAddress = () => {
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             />
-            <Marker position={position}>
-              <Popup>
-                <div>
-                  <p>Lat: {position[0].toFixed(4)}</p>
-                  <p>Lng: {position[1].toFixed(4)}</p>
-                  <p>UDPIN: {udpin}</p>
-                </div>
-              </Popup>
-            </Marker>
+            {position && (
+              <Marker position={position}>
+                <Popup>
+                  <div>
+                    <p>Lat: {position[0].toFixed(4)}</p>
+                    <p>Lng: {position[1].toFixed(4)}</p>
+                    <p>UDPIN: {udpin}</p>
+                  </div>
+                </Popup>
+              </Marker>
+            )}
+            <MapUpdater position={position} isLoading={isLoading} mapRef={mapRef} />
           </MapContainer>
           {isLoading && (
             <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">

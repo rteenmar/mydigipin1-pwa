@@ -73,6 +73,27 @@ const LocationMarker: React.FC<LocationMarkerProps> = ({ position, onPositionCha
   );
 };
 
+// Helper component to update map view and invalidate size
+const MapUpdater = ({ position, isLoading, mapRef }: { position: [number, number] | null; isLoading: boolean; mapRef: React.RefObject<L.Map | null> }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    if (mapRef.current && !isLoading) {
+      mapRef.current.invalidateSize();
+    }
+  }, [isLoading, mapRef]);
+
+  useEffect(() => {
+    if (position && mapRef.current) {
+      map.flyTo(position, map.getZoom(), {
+        animate: true,
+        duration: 0.5,
+      });
+    }
+  }, [position, map]);
+
+  return null;
+};
 
 
 const FromAddress = () => {
@@ -83,6 +104,8 @@ const FromAddress = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const mapRef = useRef<L.Map>(null);
+
+  const initialMapCenter: [number, number] = [20.5937, 78.9629]; // Default to India
 
   // Function to update location data
   const updateLocationData = useCallback(async (lat: number, lng: number) => {
@@ -99,13 +122,6 @@ const FromAddress = () => {
       // Update position state
       setPosition([lat, lng]);
       
-      // Update map view if needed
-      if (mapRef.current) {
-        mapRef.current.flyTo([lat, lng], mapRef.current.getZoom(), {
-          animate: true,
-          duration: 0.5,
-        });
-      }
     } catch (error) {
       console.error('Error updating location:', error);
     } finally {
@@ -117,22 +133,29 @@ const FromAddress = () => {
   useEffect(() => {
     const initPosition = async () => {
       try {
+        setIsLoading(true);
+        let newPosition: [number, number];
+
         if (navigator.geolocation) {
-          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          const geoPos = await new Promise<GeolocationPosition>((resolve, reject) => {
             navigator.geolocation.getCurrentPosition(resolve, reject, {
               enableHighAccuracy: true,
               timeout: 10000,
               maximumAge: 0
             });
           });
-          const { latitude, longitude } = position.coords;
-          await updateLocationData(latitude, longitude);
+          newPosition = [geoPos.coords.latitude, geoPos.coords.longitude];
         } else {
-          throw new Error('Geolocation not supported');
+          newPosition = initialMapCenter; // Default to India
         }
+        
+        setPosition(newPosition);
+        await updateLocationData(newPosition[0], newPosition[1]);
+
       } catch (error) {
         console.error('Error getting location, defaulting to India:', error);
-        await updateLocationData(20.5937, 78.9629); // Default to India
+        setPosition(initialMapCenter);
+        await updateLocationData(initialMapCenter[0], initialMapCenter[1]);
       }
     };
 
@@ -178,16 +201,6 @@ const FromAddress = () => {
     alert('Location saved successfully!');
   };
 
-  // If position is not yet available, show a simple loading message
-  if (!position) {
-    return (
-      <div className="flex flex-col h-screen items-center justify-center bg-gray-50">
-        <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-        <p className="text-gray-600 font-medium">Loading map...</p>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col h-screen">
       <div className="bg-blue-600 text-white p-4">
@@ -219,16 +232,13 @@ const FromAddress = () => {
         </div>
           
           <div className="flex-1 relative">
-            {/* MapContainer is always rendered if position is available (handled by early return) */}
+            {/* MapContainer is always rendered with a default center */}
             <MapContainer
-              center={position}
+              center={position || initialMapCenter} // Use current position or default
               zoom={15}
               style={{ height: '100%', width: '100%' }}
               zoomControl={true}
               className="z-0"
-              whenReady={() => {
-                // Map is ready
-              }}
               ref={(map) => {
                 if (map) mapRef.current = map;
               }}
@@ -237,12 +247,15 @@ const FromAddress = () => {
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               />
-              <LocationMarker 
-                position={position} 
-                onPositionChange={async (lat, lng) => {
-                  await updateLocationData(lat, lng);
-                }}
-              />
+              {position && (
+                <LocationMarker 
+                  position={position} 
+                  onPositionChange={async (lat, lng) => {
+                    await updateLocationData(lat, lng);
+                  }}
+                />
+              )}
+              <MapUpdater position={position} isLoading={isLoading} mapRef={mapRef} />
             </MapContainer>
             
             {/* Loading overlay is a conditional child, positioned absolutely on top of the map */}

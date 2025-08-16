@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
 import { Link } from 'react-router-dom';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -40,6 +40,29 @@ const LocationMarker = ({ position, onPositionChange, popupText }: {
   );
 };
 
+// Helper component to update map view and invalidate size
+const MapUpdater = ({ position, isLoading, mapRef }: { position: [number, number] | null; isLoading: boolean; mapRef: React.RefObject<L.Map | null> }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    if (mapRef.current && !isLoading) {
+      // Invalidate size when loading finishes to ensure map renders correctly
+      mapRef.current.invalidateSize();
+    }
+  }, [isLoading, mapRef]);
+
+  useEffect(() => {
+    if (position && mapRef.current) {
+      map.flyTo(position, map.getZoom(), {
+        animate: true,
+        duration: 1.5,
+      });
+    }
+  }, [position, map]); 
+
+  return null;
+};
+
 const HomePage = () => {
   const [position, setPosition] = useState<[number, number] | null>(null);
   const [address, setAddress] = useState('');
@@ -47,6 +70,8 @@ const HomePage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const mapRef = useRef<L.Map>(null);
+
+  const initialMapCenter: [number, number] = [20.5937, 78.9629]; // Default to India
 
   // Update location data function
   const updateLocationData = useCallback(async (pos: [number, number]) => {
@@ -60,19 +85,13 @@ const HomePage = () => {
       setUdpin(newUdpin);
       setAddress(addr);
       
-      // Update map view if ref exists
-      if (mapRef.current) {
-        mapRef.current.flyTo(pos, 15, {
-          animate: true,
-          duration: 1.5,
-        });
-      }
-      
       return addr;
     } catch (error) {
       console.error('Error updating location data:', error);
       setAddress('Address not available');
       return 'Address not available';
+    } finally {
+      setIsLoading(false); // Set loading to false after data is fetched
     }
   }, []);
 
@@ -81,35 +100,6 @@ const HomePage = () => {
     setPosition(newPosition);
     updateLocationData(newPosition);
   }, [updateLocationData]);
-
-  // Memoize the map component to prevent unnecessary re-renders
-  const MapComponent = useMemo(() => {
-    if (!position) return null;
-    
-    return (
-      <MapContainer
-        key={`map-${position[0]}-${position[1]}`}
-        center={position}
-        zoom={15}
-        style={{ height: '100%', width: '100%', minHeight: '100%' }}
-        zoomControl={true}
-        ref={mapRef}
-        whenReady={() => {}}
-        preferCanvas={true}
-        className="z-0"
-      >
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        />
-        <LocationMarker 
-          position={position} 
-          onPositionChange={handlePositionChange}
-          popupText={`Your location: ${address || 'Unknown address'}`}
-        />
-      </MapContainer>
-    );
-  }, [position, address, handlePositionChange]);
 
   // Initialize map position and data
   useEffect(() => {
@@ -124,7 +114,7 @@ const HomePage = () => {
         
         if (navigator.geolocation) {
           try {
-            const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            const geoPos = await new Promise<GeolocationPosition>((resolve, reject) => {
               navigator.geolocation.getCurrentPosition(resolve, reject, {
                 enableHighAccuracy: true,
                 timeout: 10000,
@@ -133,36 +123,28 @@ const HomePage = () => {
             });
             
             if (!isMounted) return;
-            newPosition = [position.coords.latitude, position.coords.longitude];
+            newPosition = [geoPos.coords.latitude, geoPos.coords.longitude];
           } catch (error) {
             console.log('Using default position due to geolocation error:', error);
             if (!isMounted) return;
-            newPosition = [20.5937, 78.9629]; // Default to India
+            newPosition = initialMapCenter; // Use default if geolocation fails
           }
         } else {
-          newPosition = [20.5937, 78.9629]; // Default to India
+          newPosition = initialMapCenter; // Default to India
         }
         
         if (!isMounted) return;
         
-        // Update position and location data in a single state update
-        await updateLocationData(newPosition);
+        // Set position first, then update data
         setPosition(newPosition);
+        await updateLocationData(newPosition);
         
       } catch (error) {
         console.error('Error initializing map:', error);
         if (!isMounted) return;
         
-        const defaultPosition: [number, number] = [20.5937, 78.9629];
-        setPosition(defaultPosition);
-        await updateLocationData(defaultPosition);
-      } finally {
-        if (isMounted) {
-          // Add a small delay to ensure smooth transition
-          setTimeout(() => {
-            setIsLoading(false);
-          }, 500);
-        }
+        setPosition(initialMapCenter); // Fallback position
+        await updateLocationData(initialMapCenter);
       }
     };
     
@@ -172,9 +154,6 @@ const HomePage = () => {
       isMounted = false;
     };
   }, []);
-
-
-
 
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -264,7 +243,31 @@ const HomePage = () => {
         
         {/* Map Wrapper */}
         <div className="relative w-full" style={{ minHeight: '24rem', height: '24rem' }}>
-          {/* Loading Overlay */}
+          {/* Map Container - always rendered with a default center */}
+          <MapContainer
+            center={initialMapCenter} // Use a default center initially
+            zoom={15}
+            style={{ height: '100%', width: '100%', minHeight: '100%' }}
+            zoomControl={true}
+            ref={mapRef}
+            preferCanvas={true}
+            className="z-0"
+          >
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            />
+            {position && ( // Only render marker if position is available
+              <LocationMarker 
+                position={position} 
+                onPositionChange={handlePositionChange}
+                popupText={`Your location: ${address || 'Unknown address'}`}
+              />
+            )}
+            <MapUpdater position={position} isLoading={isLoading} mapRef={mapRef} />
+          </MapContainer>
+
+          {/* Loading Overlay - conditionally rendered on top */}
           {isLoading && (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-white bg-opacity-90 transition-opacity duration-300">
               <div className="text-center">
@@ -273,14 +276,6 @@ const HomePage = () => {
               </div>
             </div>
           )}
-          
-          {/* Map Container */}
-          <div 
-            className={`w-full h-full transition-opacity duration-300 ${isLoading ? 'opacity-0' : 'opacity-100'}`}
-            style={{ position: 'relative', zIndex: 0 }}
-          >
-            {position && MapComponent}
-          </div>
         </div>
         
         {/* Location Information */}
