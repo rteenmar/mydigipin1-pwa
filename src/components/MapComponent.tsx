@@ -51,14 +51,16 @@ const MapComponent: React.FC<MapComponentProps> = ({ center, zoom = 15, isLoadin
   const initialMapCenter: [number, number] = [20.5937, 78.9629]; // Default to India
 
   // Ensure center is always valid before passing to MapContainer and MapUpdater
-  const validatedCenter: [number, number] = (isNaN(center[0]) || isNaN(center[1]))
-    ? initialMapCenter // Fallback to a known good default if somehow NaN gets here
-    : center;
+  // This is the most critical part to prevent NaN from reaching Leaflet.
+  const finalCenter: [number, number] = [
+    isNaN(center[0]) ? initialMapCenter[0] : center[0],
+    isNaN(center[1]) ? initialMapCenter[1] : center[1]
+  ];
 
   return (
     <div className="relative w-full flex-1">
       <MapContainer
-        center={validatedCenter} // Use validatedCenter here
+        center={finalCenter} // Use finalCenter here, guaranteed to be valid
         zoom={zoom}
         style={{ height: '100%', width: '100%' }}
         zoomControl={true}
@@ -69,7 +71,7 @@ const MapComponent: React.FC<MapComponentProps> = ({ center, zoom = 15, isLoadin
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
-        <MapUpdater center={validatedCenter} isLoading={isLoading} mapRef={mapRef} /> {/* Use validatedCenter here */}
+        <MapUpdater center={finalCenter} isLoading={isLoading} mapRef={mapRef} /> {/* Use finalCenter here */}
         {children}
       </MapContainer>
 
