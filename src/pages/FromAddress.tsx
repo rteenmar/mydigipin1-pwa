@@ -357,6 +357,7 @@ const FromAddress = () => {
         </div>
       </div>
     </div>
+    // End of FromAddress component JSX
   );
 };
 
