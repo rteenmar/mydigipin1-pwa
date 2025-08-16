@@ -137,12 +137,12 @@ const ToAddress = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col"> {/* Removed h-screen here */}
       <div className="bg-blue-600 text-white p-4">
         <h1 className="text-xl font-bold">To Address</h1>
       </div>
 
-      <div className="flex flex-col"> {/* Removed flex-1 here */}
+      <div className="flex flex-col">
         <div className="p-4 border-b">
           <form onSubmit={handleSearch} className="flex gap-2">
             <input
