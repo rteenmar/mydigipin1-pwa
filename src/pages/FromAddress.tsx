@@ -62,7 +62,7 @@ const LocationMarker: React.FC<LocationMarkerProps> = ({ position, onPositionCha
 
 const FromAddress = () => {
   const initialMapCenter: [number, number] = [20.5937, 78.9629]; // Default to India
-  const [position, setPosition] = useState<[number, number]>(initialMapCenter); // Initialize with default
+  const [position, setPosition] = useState<[number, number] | null>(null); // Initialize as null
   const [address, setAddress] = useState('');
   const [locationName, setLocationName] = useState('');
   const [udpin, setUdpin] = useState('');
@@ -266,12 +266,23 @@ const FromAddress = () => {
           </form>
         </div>
 
-        <MapComponent key={mapKey} center={position} isLoading={isLoading}>
-          <LocationMarker
-            position={position}
-            onPositionChange={updateLocationData}
-          />
-        </MapComponent>
+        <div className="relative w-full flex-1">
+          {position && (
+            <MapComponent key={mapKey} center={position} isLoading={isLoading}>
+              <LocationMarker
+                position={position}
+                onPositionChange={updateLocationData}
+              />
+            </MapComponent>
+          )}
+          {isLoading && !position && (
+            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
+              <div className="bg-white p-4 rounded-lg">
+                <p>Loading map...</p>
+              </div>
+            </div>
+          )}
+        </div>
 
         <div className="p-4 border-t">
           <div className="mb-4">

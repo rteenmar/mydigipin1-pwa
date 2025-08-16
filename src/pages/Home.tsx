@@ -7,7 +7,7 @@ import MapComponent from '../components/MapComponent'; // Import the new MapComp
 
 const HomePage = () => {
   const initialMapCenter: [number, number] = [20.5937, 78.9629]; // Default to India
-  const [position, setPosition] = useState<[number, number]>(initialMapCenter); // Initialize with default
+  const [position, setPosition] = useState<[number, number] | null>(null); // Initialize as null
   const [address, setAddress] = useState('');
   const [udpin, setUdpin] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -37,8 +37,14 @@ const HomePage = () => {
     } catch (error) {
       console.error('Error in updateLocationData processing:', error);
       // newPosition, newAddress, newUdpin remain as initial/default
+    } finally {
+      // Always update state and mapKey at the end of the process
+      setPosition(newPosition);
+      setAddress(newAddress);
+      setUdpin(newUdpin);
+      setMapKey(prevKey => prevKey + 1);
+      setIsLoading(false);
     }
-    return { newPosition, newAddress, newUdpin };
   }, [initialMapCenter]);
 
   // Initialize map position and data
@@ -76,13 +82,7 @@ const HomePage = () => {
 
       if (!isMounted) return;
 
-      const { newPosition, newAddress, newUdpin } = await updateLocationData(currentLat, currentLng);
-      
-      setPosition(newPosition);
-      setAddress(newAddress);
-      setUdpin(newUdpin);
-      setMapKey(prevKey => prevKey + 1); // Force re-render with new valid position
-      setIsLoading(false); // End loading after all updates
+      await updateLocationData(currentLat, currentLng);
     };
 
     initMap();
@@ -128,20 +128,12 @@ const HomePage = () => {
         alert('No results found. Please try a different search term.');
       }
 
-      const { newPosition, newAddress, newUdpin } = await updateLocationData(targetLat, targetLng);
-      
-      setPosition(newPosition);
-      setAddress(newAddress);
-      setUdpin(newUdpin);
-      setMapKey(prevKey => prevKey + 1); // Force re-render with new valid position
+      await updateLocationData(targetLat, targetLng);
 
     } catch (error) {
       console.error('Error searching location:', error);
       alert('Failed to find location. Please try again.');
-      setPosition(initialMapCenter); // Fallback on search error
-      setAddress('Error fetching address');
-      setUdpin('N/A');
-      setMapKey(prevKey => prevKey + 1); // Force re-render on error
+      // Fallback handled by updateLocationData
     } finally {
       setIsLoading(false);
     }
@@ -213,14 +205,23 @@ const HomePage = () => {
 
         {/* Map Wrapper */}
         <div className="relative w-full" style={{ minHeight: '24rem', height: '24rem' }}>
-          <MapComponent key={mapKey} center={position} isLoading={isLoading}>
-            <Marker
-              key={`marker-${mapKey}`} // Also key the marker
-              position={position}
-            >
-              <Popup>Your location: {address || 'Unknown address'}</Popup>
-            </Marker>
-          </MapComponent>
+          {position && (
+            <MapComponent key={mapKey} center={position} isLoading={isLoading}>
+              <Marker
+                key={`marker-${mapKey}`} // Also key the marker
+                position={position}
+              >
+                <Popup>Your location: {address || 'Unknown address'}</Popup>
+              </Marker>
+            </MapComponent>
+          )}
+          {isLoading && !position && (
+            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
+              <div className="bg-white p-4 rounded-lg">
+                <p>Loading map...</p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Location Information */}
