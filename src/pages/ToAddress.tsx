@@ -20,6 +20,14 @@ const ToAddress = () => {
   const updateLocationData = useCallback(async (lat: number, lng: number) => {
     try {
       setIsLoading(true);
+      // Add explicit NaN check here too, just in case
+      if (isNaN(lat) || isNaN(lng)) {
+        console.error('Invalid coordinates passed to updateLocationData:', lat, lng);
+        setUdpin('N/A');
+        setAddress('Invalid coordinates');
+        setPosition(null); // Or set to a default valid position if preferred
+        return; // Exit early
+      }
       const [newUdpin, addr] = await Promise.all([
         formatUDPIN(generateUDPIN(lat, lng)),
         reverseGeocode(lat, lng)

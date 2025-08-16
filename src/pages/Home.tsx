@@ -17,10 +17,20 @@ const HomePage = () => {
   // Update location data function
   const updateLocationData = useCallback(async (pos: [number, number]) => {
     try {
-      // Batch state updates
+      // Ensure lat and lng are numbers before passing to generateUDPIN and reverseGeocode
+      const lat = pos[0];
+      const lng = pos[1];
+
+      if (isNaN(lat) || isNaN(lng)) {
+        console.error('Invalid coordinates passed to updateLocationData:', pos);
+        setAddress('Invalid coordinates');
+        setUdpin('N/A');
+        return 'Invalid coordinates';
+      }
+
       const [newUdpin, addr] = await Promise.all([
-        formatUDPIN(generateUDPIN(pos[0], pos[1])),
-        reverseGeocode(pos[0], pos[1]).catch(() => 'Address not available')
+        formatUDPIN(generateUDPIN(lat, lng)),
+        reverseGeocode(lat, lng).catch(() => 'Address not available')
       ]);
 
       setUdpin(newUdpin);
@@ -58,7 +68,15 @@ const HomePage = () => {
             });
 
             if (!isMounted) return;
-            newPosition = [geoPos.coords.latitude, geoPos.coords.longitude];
+
+            // Explicitly check for NaN here
+            if (isNaN(geoPos.coords.latitude) || isNaN(geoPos.coords.longitude)) {
+              console.warn('Geolocation returned NaN coordinates, falling back to default.');
+              newPosition = initialMapCenter;
+            } else {
+              newPosition = [geoPos.coords.latitude, geoPos.coords.longitude];
+            }
+
           } catch (error) {
             console.log('Using default position due to geolocation error:', error);
             if (!isMounted) return;
@@ -88,7 +106,7 @@ const HomePage = () => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [updateLocationData]);
 
 
   const handleSearch = async (e: React.FormEvent) => {

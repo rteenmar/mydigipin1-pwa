@@ -78,6 +78,14 @@ const FromAddress = () => {
   const updateLocationData = useCallback(async (lat: number, lng: number) => {
     try {
       setIsLoading(true);
+      // Add explicit NaN check here too, just in case
+      if (isNaN(lat) || isNaN(lng)) {
+        console.error('Invalid coordinates passed to updateLocationData:', lat, lng);
+        setUdpin('N/A');
+        setAddress('Invalid coordinates');
+        setPosition(null); // Or set to a default valid position if preferred
+        return; // Exit early
+      }
       const [newUdpin, addr] = await Promise.all([
         formatUDPIN(generateUDPIN(lat, lng)),
         reverseGeocode(lat, lng)
@@ -121,7 +129,15 @@ const FromAddress = () => {
               });
             });
             if (!isMounted) return; // Check if component is still mounted
-            newPosition = [geoPos.coords.latitude, geoPos.coords.longitude];
+            
+            // Explicitly check for NaN here
+            if (isNaN(geoPos.coords.latitude) || isNaN(geoPos.coords.longitude)) {
+              console.warn('Geolocation returned NaN coordinates, falling back to default.');
+              newPosition = initialMapCenter;
+            } else {
+              newPosition = [geoPos.coords.latitude, geoPos.coords.longitude];
+            }
+
           } catch (error) {
             console.log('Using default position due to geolocation error:', error);
             if (!isMounted) return; // Check if component is still mounted
