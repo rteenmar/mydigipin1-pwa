@@ -57,23 +57,23 @@ export function generateUDPIN(lat: number, lng: number): string {
   const digits = isIndia ? 10 : 12;
   
   // Initialize bounds for the first level
-  let minLat = bounds.minLat;
-  let maxLat = bounds.maxLat;
-  let minLng = bounds.minLon;
-  let maxLng = bounds.maxLon;
+  let currentMinLat = bounds.minLat;
+  let currentMaxLat = bounds.maxLat;
+  let currentMinLon = bounds.minLon;
+  let currentMaxLon = bounds.maxLon;
   
   let udpin = '';
   
   // For each digit in the DIGIPIN
   for (let level = 1; level <= digits; level++) {
     // Calculate the size of each division at this level
-    const latDiv = (maxLat - minLat) / 4;
-    const lngDiv = (maxLng - minLng) / 4;
+    const latDiv = (currentMaxLat - currentMinLat) / 4;
+    const lngDiv = (currentMaxLon - currentMinLon) / 4;
     
     // Find the row (latitude division) - 0 = north, 3 = south
     let row = 0;
     for (let i = 0; i < 4; i++) {
-      const latBoundary = maxLat - (i * latDiv);
+      const latBoundary = currentMaxLat - (i * latDiv);
       if (lat >= (latBoundary - latDiv)) {
         row = i;
         break;
@@ -83,7 +83,7 @@ export function generateUDPIN(lat: number, lng: number): string {
     // Find the column (longitude division) - 0 = west, 3 = east
     let col = 0;
     for (let i = 0; i < 4; i++) {
-      const lngBoundary = minLng + ((i + 1) * lngDiv);
+      const lngBoundary = currentMinLon + ((i + 1) * lngDiv);
       if (lng < lngBoundary) {
         col = i;
         break;
@@ -94,10 +94,16 @@ export function generateUDPIN(lat: number, lng: number): string {
     udpin += DIGIPIN_GRID[row][col];
     
     // Update bounds for the next level
-    minLat = maxLat - ((row + 1) * latDiv);
-    maxLat = maxLat - (row * latDiv);
-    minLng = minLng + (col * lngDiv);
-    maxLng = minLng + lngDiv;
+    // These calculations define the new, smaller bounding box for the next iteration
+    const nextMaxLat = currentMaxLat - (row * latDiv);
+    const nextMinLat = currentMaxLat - ((row + 1) * latDiv);
+    const nextMinLon = currentMinLon + (col * lngDiv);
+    const nextMaxLon = currentMinLon + ((col + 1) * lngDiv); // Corrected this line
+    
+    currentMinLat = nextMinLat;
+    currentMaxLat = nextMaxLat;
+    currentMinLon = nextMinLon;
+    currentMaxLon = nextMaxLon;
     
     // Add hyphens for better readability
     if (isIndia) {

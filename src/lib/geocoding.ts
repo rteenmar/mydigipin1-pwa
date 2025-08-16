@@ -18,13 +18,22 @@ export interface NominatimResult {
   };
 }
 
+const NOMINATIM_BASE_URL = 'https://nominatim.openstreetmap.org/';
+// As per Nominatim usage policy, provide a valid User-Agent
+const USER_AGENT = 'MyDigiPin-App/1.0 (https://github.com/your-username/your-repo-name)'; // IMPORTANT: Replace with your actual app info and repository URL
+
 /**
  * Geocode an address to get coordinates
  */
 export async function geocodeAddress(address: string): Promise<{lat: number; lng: number} | null> {
   try {
     const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`
+      `${NOMINATIM_BASE_URL}search?format=json&q=${encodeURIComponent(address)}`,
+      {
+        headers: {
+          'User-Agent': USER_AGENT
+        }
+      }
     );
     const results = await response.json() as NominatimResult[];
     
@@ -47,7 +56,12 @@ export async function geocodeAddress(address: string): Promise<{lat: number; lng
 export async function reverseGeocode(lat: number, lng: number): Promise<string> {
   try {
     const response = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`
+      `${NOMINATIM_BASE_URL}reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`,
+      {
+        headers: {
+          'User-Agent': USER_AGENT
+        }
+      }
     );
     const result = await response.json() as NominatimResult;
     
