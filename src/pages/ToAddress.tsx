@@ -43,6 +43,8 @@ const ToAddress = () => {
   const [udpin, setUdpin] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [name, setName] = useState(''); // New state for Name
+  const [phone, setPhone] = useState(''); // New state for Phone no
   const mapRef = useRef<L.Map>(null);
 
   const initialMapCenter: [number, number] = [20.5937, 78.9629]; // Default to India
@@ -136,6 +138,11 @@ const ToAddress = () => {
     setLocationName(address);
   };
 
+  const handleSaveLocation = () => {
+    console.log('Location saved:', { position, address, locationName, udpin, name, phone });
+    alert('Location saved successfully!');
+  };
+
   return (
     <div className="flex flex-col"> {/* Removed h-screen here */}
       <div className="bg-blue-600 text-white p-4">
@@ -204,6 +211,38 @@ const ToAddress = () => {
         </div>
 
         <div className="p-4 border-t">
+          <div className="mb-4">
+            <label htmlFor="to-name" className="block text-sm font-medium text-gray-700 mb-1">
+              Name
+            </label>
+            <input
+              id="to-name"
+              name="toName"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter recipient's name"
+              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              aria-label="Recipient's name"
+            />
+          </div>
+
+          <div className="mb-4">
+            <label htmlFor="to-phone" className="block text-sm font-medium text-gray-700 mb-1">
+              Phone no
+            </label>
+            <input
+              id="to-phone"
+              name="toPhone"
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="Enter recipient's phone number"
+              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              aria-label="Recipient's phone number"
+            />
+          </div>
+
           <div className="form-group mb-4">
             <label htmlFor="to-location-address" className="block text-sm font-medium text-gray-700 mb-1">
               Geo Location (Address):
@@ -271,6 +310,14 @@ const ToAddress = () => {
               </button>
             </div>
           </div>
+          <button
+            type="button"
+            onClick={handleSaveLocation}
+            className="w-full bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+            disabled={isLoading}
+          >
+            {isLoading ? 'Saving...' : 'Save Location'}
+          </button>
         </div>
       </div>
     </div>

@@ -103,6 +103,8 @@ const FromAddress = () => {
   const [udpin, setUdpin] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [name, setName] = useState(''); // New state for Name
+  const [phone, setPhone] = useState(''); // New state for Phone no
   const mapRef = useRef<L.Map>(null);
 
   const initialMapCenter: [number, number] = [20.5937, 78.9629]; // Default to India
@@ -197,7 +199,7 @@ const FromAddress = () => {
   };
 
   const handleSaveLocation = () => {
-    console.log('Location saved:', { position, address, locationName, udpin });
+    console.log('Location saved:', { position, address, locationName, udpin, name, phone });
     alert('Location saved successfully!');
   };
 
@@ -269,6 +271,38 @@ const FromAddress = () => {
           </div>
           
           <div className="p-4 border-t">
+            <div className="mb-4">
+              <label htmlFor="from-name" className="block text-sm font-medium text-gray-700 mb-1">
+                Name
+              </label>
+              <input
+                id="from-name"
+                name="fromName"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter your name"
+                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                aria-label="Your name"
+              />
+            </div>
+
+            <div className="mb-4">
+              <label htmlFor="from-phone" className="block text-sm font-medium text-gray-700 mb-1">
+                Phone no
+              </label>
+              <input
+                id="from-phone"
+                name="fromPhone"
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="Enter your phone number"
+                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                aria-label="Your phone number"
+              />
+            </div>
+
             <div className="mb-4">
               <label htmlFor="from-location-name" className="block text-sm font-medium text-gray-700 mb-1">
                 Location Name
