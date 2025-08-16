@@ -72,33 +72,35 @@ const FromAddress = () => {
   const [phone, setPhone] = useState('');
   const [mapKey, setMapKey] = useState(0); // Key to force map re-render
 
-  // Function to update location data
-  const updateLocationData = useCallback(async (lat: number, lng: number) => {
+  // Function to update location data, ensuring coordinates are valid
+  const updateLocationData = useCallback(async (inputLat: number, inputLng: number): Promise<void> => {
+    let newPosition: [number, number] = initialMapCenter;
+    let newAddress = 'Address not available';
+    let newUdpin = 'N/A';
+
     try {
-      setIsLoading(true);
-      if (isNaN(lat) || isNaN(lng)) {
-        console.error('Invalid coordinates passed to updateLocationData:', lat, lng);
-        setUdpin('N/A');
-        setAddress('Invalid coordinates');
-        setPosition(initialMapCenter); // Fallback to default if NaN
-        setMapKey(prevKey => prevKey + 1); // Increment key on fallback
-        return;
+      if (isNaN(inputLat) || isNaN(inputLng)) {
+        console.error('Invalid coordinates provided to updateLocationData:', inputLat, inputLng);
+        // newPosition, newAddress, newUdpin remain as initial/default
+      } else {
+        const [udpinResult, addressResult] = await Promise.all([
+          formatUDPIN(generateUDPIN(inputLat, inputLng)),
+          reverseGeocode(inputLat, inputLng)
+        ]);
+
+        newPosition = [inputLat, inputLng];
+        newUdpin = udpinResult;
+        newAddress = addressResult;
       }
-      const [newUdpin, addr] = await Promise.all([
-        formatUDPIN(generateUDPIN(lat, lng)),
-        reverseGeocode(lat, lng)
-      ]);
-
-      setUdpin(newUdpin);
-      setAddress(addr);
-      setPosition([lat, lng]);
-      setMapKey(prevKey => prevKey + 1); // Increment key on successful update
-
     } catch (error) {
-      console.error('Error updating location:', error);
-      setPosition(initialMapCenter); // Fallback to default on error
-      setMapKey(prevKey => prevKey + 1); // Increment key on error
+      console.error('Error in updateLocationData processing:', error);
+      // newPosition, newAddress, newUdpin remain as initial/default
     } finally {
+      // Always update state and mapKey at the end of the process
+      setPosition(newPosition);
+      setAddress(newAddress);
+      setUdpin(newUdpin);
+      setMapKey(prevKey => prevKey + 1);
       setIsLoading(false);
     }
   }, [initialMapCenter]);
@@ -108,62 +110,56 @@ const FromAddress = () => {
     let isMounted = true;
 
     const initPosition = async () => {
-      try {
-        setIsLoading(true);
-        let newPosition: [number, number];
-        const savedData = loadFromAddressData();
+      setIsLoading(true); // Start loading immediately
 
-        if (savedData) {
-          newPosition = [savedData.lat, savedData.lng];
-          setName(savedData.name);
-          setPhone(savedData.phone);
-          setLocationName(savedData.address);
-          setUdpin(savedData.udpin);
-          setAddress(savedData.address);
-        } else if (navigator.geolocation) {
-          try {
-            const geoPos = await new Promise<GeolocationPosition>((resolve, reject) => {
-              navigator.geolocation.getCurrentPosition(resolve, reject, {
-                enableHighAccuracy: true,
-                timeout: 10000,
-                maximumAge: 0
-              });
+      let currentLat = initialMapCenter[0];
+      let currentLng = initialMapCenter[1];
+
+      const savedData = loadFromAddressData();
+      if (savedData) {
+        currentLat = savedData.lat;
+        currentLng = savedData.lng;
+        setName(savedData.name);
+        setPhone(savedData.phone);
+        setLocationName(savedData.address);
+        setUdpin(savedData.udpin);
+        setAddress(savedData.address);
+        // If data loaded from storage, directly set position and stop loading
+        setPosition([currentLat, currentLng]);
+        setMapKey(prevKey => prevKey + 1);
+        setIsLoading(false);
+        return; // Exit early as data is loaded
+      } else if (navigator.geolocation) {
+        try {
+          const geoPos = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              enableHighAccuracy: true,
+              timeout: 10000,
+              maximumAge: 0
             });
-            if (!isMounted) return;
-            
-            if (isNaN(geoPos.coords.latitude) || isNaN(geoPos.coords.longitude)) {
-              console.warn('Geolocation returned NaN coordinates, falling back to default.');
-              newPosition = initialMapCenter;
-            } else {
-              newPosition = [geoPos.coords.latitude, geoPos.coords.longitude];
-            }
-
-          } catch (error) {
-            console.log('Using default position due to geolocation error:', error);
-            if (!isMounted) return;
-            newPosition = initialMapCenter; // Use default if geolocation fails
+          });
+          if (!isMounted) return;
+          
+          if (isNaN(geoPos.coords.latitude) || isNaN(geoPos.coords.longitude)) {
+            console.warn('Geolocation returned NaN coordinates, falling back to default.');
+            // currentLat, currentLng remain as initialMapCenter
+          } else {
+            currentLat = geoPos.coords.latitude;
+            currentLng = geoPos.coords.longitude;
           }
-        } else {
-          newPosition = initialMapCenter; // Default to India
+
+        } catch (error) {
+          if (isMounted) {
+            console.log('Using default position due to geolocation error:', error);
+          }
+          // currentLat, currentLng remain as initialMapCenter
         }
-
-        if (!isMounted) return;
-
-        setPosition(newPosition);
-        // Only update location data if it wasn't loaded from storage
-        if (!savedData) {
-          await updateLocationData(newPosition[0], newPosition[1]);
-        } else {
-          setIsLoading(false); // If loaded from storage, stop loading
-          setMapKey(prevKey => prevKey + 1); // Increment key even if loaded from storage
-        }
-
-      } catch (error) {
-        console.error('Error getting location, defaulting to India:', error);
-        if (!isMounted) return;
-        setPosition(initialMapCenter);
-        await updateLocationData(initialMapCenter[0], initialMapCenter[1]);
       }
+
+      if (!isMounted) return;
+
+      // If not loaded from saved data, update based on currentLat/Lng
+      await updateLocationData(currentLat, currentLng);
     };
 
     initPosition();
@@ -171,15 +167,16 @@ const FromAddress = () => {
     return () => {
       isMounted = false;
     };
-  }, [updateLocationData]);
+  }, [updateLocationData, initialMapCenter]);
 
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
 
+    setIsLoading(true); // Start loading immediately
+
     try {
-      setIsLoading(true);
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`
       );
@@ -190,28 +187,30 @@ const FromAddress = () => {
 
       const data = await response.json();
 
+      let targetLat = initialMapCenter[0];
+      let targetLng = initialMapCenter[1];
+
       if (data && data.length > 0) {
         const { lat, lon } = data[0];
         const parsedLat = parseFloat(lat);
         const parsedLon = parseFloat(lon);
 
         if (!isNaN(parsedLat) && !isNaN(parsedLon)) {
-          await updateLocationData(parsedLat, parsedLon);
+          targetLat = parsedLat;
+          targetLng = parsedLon;
         } else {
           alert('Received invalid coordinates from search. Please try a different search term.');
-          setPosition(initialMapCenter); // Fallback on invalid search result
-          setMapKey(prevKey => prevKey + 1); // Increment key on fallback
         }
       } else {
         alert('No results found. Please try a different search term.');
-        setPosition(initialMapCenter); // Fallback if no results
-        setMapKey(prevKey => prevKey + 1); // Increment key on fallback
       }
+
+      await updateLocationData(targetLat, targetLng);
+
     } catch (error) {
       console.error('Error searching location:', error);
       alert('Failed to find location. Please try again.');
-      setPosition(initialMapCenter); // Fallback on search error
-      setMapKey(prevKey => prevKey + 1); // Increment key on error
+      // Fallback handled by updateLocationData
     } finally {
       setIsLoading(false);
     }
@@ -269,7 +268,6 @@ const FromAddress = () => {
 
         <MapComponent key={mapKey} center={position} isLoading={isLoading}>
           <LocationMarker
-            key={`marker-${mapKey}`} // Also key the marker
             position={position}
             onPositionChange={updateLocationData}
           />
