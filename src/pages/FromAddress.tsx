@@ -4,6 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import { generateUDPIN, formatUDPIN } from '../lib/udpin';
 import { reverseGeocode } from '../lib/geocoding';
 import L from 'leaflet';
+import { saveFromAddressData, loadFromAddressData } from '../lib/appStorage'; // Import storage functions
 
 // Fix for default marker icons in Leaflet with React
 // @ts-ignore
@@ -131,14 +132,22 @@ const FromAddress = () => {
     }
   }, []);
 
-  // Initialize with default position
+  // Initialize with default position or loaded data
   useEffect(() => {
     const initPosition = async () => {
       try {
         setIsLoading(true);
         let newPosition: [number, number];
+        const savedData = loadFromAddressData();
 
-        if (navigator.geolocation) {
+        if (savedData) {
+          newPosition = [savedData.lat, savedData.lng];
+          setName(savedData.name);
+          setPhone(savedData.phone);
+          setLocationName(savedData.address); // Assuming locationName stores the address for now
+          setUdpin(savedData.udpin);
+          setAddress(savedData.address);
+        } else if (navigator.geolocation) {
           const geoPos = await new Promise<GeolocationPosition>((resolve, reject) => {
             navigator.geolocation.getCurrentPosition(resolve, reject, {
               enableHighAccuracy: true,
@@ -152,7 +161,12 @@ const FromAddress = () => {
         }
         
         setPosition(newPosition);
-        await updateLocationData(newPosition[0], newPosition[1]);
+        // Only update location data if it wasn't loaded from storage
+        if (!savedData) {
+          await updateLocationData(newPosition[0], newPosition[1]);
+        } else {
+          setIsLoading(false); // If loaded from storage, stop loading
+        }
 
       } catch (error) {
         console.error('Error getting location, defaulting to India:', error);
@@ -199,12 +213,23 @@ const FromAddress = () => {
   };
 
   const handleSaveLocation = () => {
-    console.log('Location saved:', { position, address, locationName, udpin, name, phone });
-    alert('Location saved successfully!');
+    if (position) {
+      saveFromAddressData({
+        name,
+        phone,
+        address,
+        udpin,
+        lat: position[0],
+        lng: position[1],
+      });
+      alert('From Address saved successfully!');
+    } else {
+      alert('Cannot save: location not set.');
+    }
   };
 
   return (
-    <div className="flex flex-col"> {/* Removed h-screen here */}
+    <div className="flex flex-col">
       <div className="bg-blue-600 text-white p-4">
         <h1 className="text-xl font-bold">From Address</h1>
       </div>

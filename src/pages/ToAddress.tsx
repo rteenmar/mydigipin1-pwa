@@ -4,6 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import { generateUDPIN, decodeUDPIN, formatUDPIN, isValidUDPIN } from '../lib/udpin';
 import { reverseGeocode } from '../lib/geocoding';
 import L from 'leaflet';
+import { saveToAddressData, loadToAddressData } from '../lib/appStorage'; // Import storage functions
 
 // Fix for default marker icons in Leaflet with React
 // @ts-ignore
@@ -72,9 +73,27 @@ const ToAddress = () => {
     const initPosition = async () => {
       try {
         setIsLoading(true);
-        // Default to India if no geolocation
-        setPosition(initialMapCenter); // Set initial position for map to render
-        await updateLocationData(initialMapCenter[0], initialMapCenter[1]); 
+        let newPosition: [number, number];
+        const savedData = loadToAddressData();
+
+        if (savedData) {
+          newPosition = [savedData.lat, savedData.lng];
+          setName(savedData.name);
+          setPhone(savedData.phone);
+          setLocationName(savedData.address); // Assuming locationName stores the address for now
+          setUdpin(savedData.udpin);
+          setAddress(savedData.address);
+        } else {
+          newPosition = initialMapCenter; // Default to India
+        }
+        
+        setPosition(newPosition);
+        // Only update location data if it wasn't loaded from storage
+        if (!savedData) {
+          await updateLocationData(initialMapCenter[0], initialMapCenter[1]); 
+        } else {
+          setIsLoading(false); // If loaded from storage, stop loading
+        }
       } catch (error) {
         console.error('Error initializing map:', error);
       } finally {
@@ -139,12 +158,23 @@ const ToAddress = () => {
   };
 
   const handleSaveLocation = () => {
-    console.log('Location saved:', { position, address, locationName, udpin, name, phone });
-    alert('Location saved successfully!');
+    if (position) {
+      saveToAddressData({
+        name,
+        phone,
+        address,
+        udpin,
+        lat: position[0],
+        lng: position[1],
+      });
+      alert('To Address saved successfully!');
+    } else {
+      alert('Cannot save: location not set.');
+    }
   };
 
   return (
-    <div className="flex flex-col"> {/* Removed h-screen here */}
+    <div className="flex flex-col">
       <div className="bg-blue-600 text-white p-4">
         <h1 className="text-xl font-bold">To Address</h1>
       </div>

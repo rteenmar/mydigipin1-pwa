@@ -213,3 +213,89 @@ body {
 .install-button:active {
   transform: translateY(0);
 }
+
+/* Print-specific styles */
+@media print {
+  body {
+    background-color: #fff;
+    margin: 0;
+    padding: 0;
+  }
+
+  .print-page {
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+    border-radius: 0;
+  }
+
+  .print-hidden,
+  .navigation,
+  .app-header,
+  .app-content > p,
+  .features,
+  .get-started-section,
+  footer {
+    display: none !important;
+  }
+
+  .print-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 20px; /* Space between slips */
+    padding: 20px;
+    border: none !important;
+    box-shadow: none !important;
+    background-color: transparent !important;
+  }
+
+  .address-slip {
+    border: 1px solid #ccc;
+    padding: 20px;
+    margin-bottom: 20px; /* Space between slips */
+    page-break-inside: avoid; /* Avoid breaking a slip across pages */
+    background-color: #fff;
+    box-shadow: none;
+    border-radius: 0;
+  }
+
+  .address-slip:last-child {
+    margin-bottom: 0;
+  }
+
+  .address-slip h4 {
+    font-size: 1.2em;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+  }
+
+  .address-slip p {
+    font-size: 0.9em;
+    margin-bottom: 5px;
+  }
+
+  .address-slip .qr-code,
+  .address-slip .barcode {
+    margin-top: 15px;
+    display: inline-block; /* For side-by-side if space allows */
+    vertical-align: top;
+    margin-right: 15px;
+  }
+
+  .address-slip .qr-code img,
+  .address-slip .barcode img {
+    width: 100px; /* Smaller for print */
+    height: auto;
+  }
+
+  .address-slip .barcode img {
+    height: 50px; /* Smaller for print */
+    width: 150px;
+  }
+
+  .address-slip .flex-wrap {
+    justify-content: flex-start;
+  }
+}
