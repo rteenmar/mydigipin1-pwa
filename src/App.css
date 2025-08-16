@@ -292,7 +292,7 @@ body {
     flex-basis: 30mm !important; /* Fixed width for codes (approx 1.2in) */
     min-width: 30mm !important;
     max-width: 30mm !important;
-    flex-shrink: 0 !important; /* Ensure it doesn't shrink */
+    flex-shrink: 0 !important;
     box-sizing: border-box !important;
   }
 
@@ -301,7 +301,10 @@ body {
     min-width: 0 !important; /* Allow content to shrink */
     overflow: hidden !important; /* Crucial to prevent content overflow */
     box-sizing: border-box !important;
-    text-align: right !important; /* Align all text content to the right */
+    display: flex !important; /* Make it a flex container */
+    flex-direction: column !important; /* Stack children vertically */
+    align-items: flex-end !important; /* Align children (p tags) to the right */
+    justify-content: flex-start !important; /* Align content to top */
   }
 
   .address-slip .qr-code,
@@ -337,6 +340,7 @@ body {
     white-space: normal !important; /* Ensure text wraps */
     word-break: break-all !important; /* Force break long words */
     box-sizing: border-box !important;
+    text-align: right !important; /* Ensure text within p is right-aligned */
   }
   .address-slip p:last-child {
     margin-bottom: 0 !important;
