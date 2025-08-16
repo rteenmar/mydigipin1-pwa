@@ -22,18 +22,6 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     
-    <!-- Service Worker Registration (disabled in development) -->
-    <script>
-      // Disable service worker in development
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(registrations => {
-          for(let registration of registrations) {
-            registration.unregister().then(() => {
-              console.log('ServiceWorker unregistered for development');
-            });
-          }
-        });
-      }
-    </script>
+    <!-- Service Worker Registration is handled by vite-plugin-pwa -->
   </body>
 </html>
