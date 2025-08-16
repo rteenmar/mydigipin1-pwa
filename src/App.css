@@ -264,6 +264,7 @@ body {
     height: 2in !important; /* Explicitly set height */
     overflow: hidden !important; /* Crucial for fixed size */
     display: flex !important; /* Ensure flex layout */
+    flex-direction: row !important; /* Ensure horizontal layout */
     flex-wrap: nowrap !important; /* Prevent wrapping of main columns */
     align-items: flex-start !important; /* Align content to top */
     justify-content: flex-start !important; /* Align content to start */
@@ -295,6 +296,7 @@ body {
     word-wrap: break-word !important; /* Ensure long words break */
     overflow-wrap: break-word !important;
     white-space: normal !important; /* Ensure text wraps */
+    flex-shrink: 1 !important; /* Ensure it shrinks if needed */
   }
 
   .address-slip .qr-code,
@@ -322,9 +324,13 @@ body {
   .address-slip p {
     font-size: 0.9em !important; /* Adjusted font size for details within the smaller slip */
     line-height: 1.2 !important; /* Tighter line spacing */
-    margin-bottom: 0 !important; /* Remove default paragraph margin */
+    margin-bottom: 1mm !important; /* Small margin between lines */
     display: block !important; /* Ensure each detail is on its own line */
     white-space: normal !important; /* Ensure text wraps */
+    word-break: break-all !important; /* Force break long words */
+  }
+  .address-slip p:last-child {
+    margin-bottom: 0 !important;
   }
   .address-slip p strong {
     display: inline-block !important; /* Ensure strong doesn't break line */
@@ -337,5 +343,6 @@ body {
     vertical-align: top !important;
     max-width: calc(100% - 17mm) !important; /* Adjust max-width for content */
     white-space: normal !important; /* Ensure text wraps */
+    word-break: break-all !important; /* Force break long words */
   }
 }

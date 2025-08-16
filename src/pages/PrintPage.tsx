@@ -149,7 +149,7 @@ const PrintPage = () => {
                     </div>
                   )}
                 </div>
-                <div className="flex-grow space-y-0.5 text-xs">
+                <div className="flex-grow"> {/* Removed space-y-0.5 text-xs */}
                   {fromOptions.name && (
                     <p><strong className="text-gray-700">Name:</strong> <span className="ml-1">{fromData.name}</span></p>
                   )}
@@ -185,7 +185,7 @@ const PrintPage = () => {
                     </div>
                   )}
                 </div>
-                <div className="flex-grow space-y-0.5 text-xs">
+                <div className="flex-grow"> {/* Removed space-y-0.5 text-xs */}
                   {toOptions.name && (
                     <p><strong className="text-gray-700">Name:</strong> <span className="ml-1">{toData.name}</span></p>
                   )}
