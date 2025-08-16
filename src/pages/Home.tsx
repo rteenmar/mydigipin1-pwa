@@ -12,7 +12,6 @@ const HomePage = () => {
   const [udpin, setUdpin] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  // Removed mapKey state
 
   // Function to update location data, ensuring coordinates are valid
   const updateLocationData = useCallback(async (inputLat: number, inputLng: number) => {
@@ -47,7 +46,6 @@ const HomePage = () => {
       }
       setAddress(newAddress);
       setUdpin(newUdpin);
-      // Removed setMapKey
       setIsLoading(false);
     }
   }, [initialMapCenter]);

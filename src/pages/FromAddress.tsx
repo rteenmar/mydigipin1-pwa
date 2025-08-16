@@ -70,7 +70,6 @@ const FromAddress = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  // Removed mapKey state
 
   // Function to update location data, ensuring coordinates are valid
   const updateLocationData = useCallback(async (inputLat: number, inputLng: number): Promise<void> => {
@@ -105,7 +104,6 @@ const FromAddress = () => {
       }
       setAddress(newAddress);
       setUdpin(newUdpin);
-      // Removed setMapKey
       setIsLoading(false);
     }
   }, [initialMapCenter]);
@@ -121,7 +119,7 @@ const FromAddress = () => {
       let currentLng = initialMapCenter[1];
 
       const savedData = loadFromAddressData();
-      if (savedData) {
+      if (savedData && !isNaN(savedData.lat) && !isNaN(savedData.lng)) {
         currentLat = savedData.lat;
         currentLng = savedData.lng;
         setName(savedData.name);
@@ -129,12 +127,11 @@ const FromAddress = () => {
         setLocationName(savedData.address);
         setUdpin(savedData.udpin);
         setAddress(savedData.address);
-        // If data loaded from storage, directly set position and stop loading
-        setPosition([currentLat, currentLng]);
-        // Removed setMapKey
-        setIsLoading(false);
-        return; // Exit early as data is loaded
-      } else if (navigator.geolocation) {
+      } else if (savedData) {
+        console.warn('Saved From Address data contained NaN coordinates, falling back to geolocation or default.');
+      }
+      
+      if (navigator.geolocation) {
         try {
           const geoPos = await new Promise<GeolocationPosition>((resolve, reject) => {
             navigator.geolocation.getCurrentPosition(resolve, reject, {
@@ -145,25 +142,23 @@ const FromAddress = () => {
           });
           if (!isMounted) return;
           
-          if (isNaN(geoPos.coords.latitude) || isNaN(geoPos.coords.longitude)) {
-            console.warn('Geolocation returned NaN coordinates, falling back to default.');
-            // currentLat, currentLng remain as initialMapCenter
-          } else {
+          if (!isNaN(geoPos.coords.latitude) && !isNaN(geoPos.coords.longitude)) {
             currentLat = geoPos.coords.latitude;
             currentLng = geoPos.coords.longitude;
+          } else {
+            console.warn('Geolocation returned NaN coordinates, falling back to default.');
           }
 
         } catch (error) {
           if (isMounted) {
             console.log('Using default position due to geolocation error:', error);
           }
-          // currentLat, currentLng remain as initialMapCenter
         }
       }
 
       if (!isMounted) return;
 
-      // If not loaded from saved data, update based on currentLat/Lng
+      // Always call updateLocationData to ensure consistent validation and state updates
       await updateLocationData(currentLat, currentLng);
     };
 

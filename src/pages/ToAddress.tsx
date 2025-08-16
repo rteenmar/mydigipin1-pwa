@@ -15,7 +15,6 @@ const ToAddress = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  // Removed mapKey state
 
   // Function to update location data, ensuring coordinates are valid
   const updateLocationData = useCallback(async (inputLat: number, inputLng: number) => {
@@ -50,7 +49,6 @@ const ToAddress = () => {
       }
       setAddress(newAddress);
       setUdpin(newUdpin);
-      // Removed setMapKey
       setIsLoading(false);
     }
   }, [initialMapCenter]);
@@ -63,7 +61,7 @@ const ToAddress = () => {
       let currentLng = initialMapCenter[1];
       
       const savedData = loadToAddressData();
-      if (savedData) {
+      if (savedData && !isNaN(savedData.lat) && !isNaN(savedData.lng)) {
         currentLat = savedData.lat;
         currentLng = savedData.lng;
         setName(savedData.name);
@@ -71,7 +69,9 @@ const ToAddress = () => {
         setLocationName(savedData.address);
         setUdpin(savedData.udpin);
         setAddress(savedData.address);
-      } 
+      } else if (savedData) {
+        console.warn('Saved To Address data contained NaN coordinates, falling back to default.');
+      }
       // No geolocation for ToAddress, so currentLat/Lng remain initialMapCenter if no savedData
 
       await updateLocationData(currentLat, currentLng);
