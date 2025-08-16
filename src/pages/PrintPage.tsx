@@ -134,84 +134,78 @@ const PrintPage = () => {
         
         <div className="preview-content p-4 border border-gray-200 rounded-md print-layout">
           {/* From Address Slip */}
-          <div className="address-slip from-address-slip mb-6 p-4 border-b border-gray-100">
-            <h4 className="text-lg font-medium text-blue-700 mb-3 flex items-center">
-              <FaUser className="mr-2" /> Sender Information
-            </h4>
+          <div className="address-slip from-address-slip mb-6">
             {fromData ? (
-              <div className="space-y-2">
-                {fromOptions.name && (
-                  <p><strong className="text-gray-700">Name:</strong> <span className="ml-2">{fromData.name}</span></p>
-                )}
-                {fromOptions.phone && (
-                  <p><strong className="text-gray-700">Phone:</strong> <span className="ml-2">{fromData.phone}</span></p>
-                )}
-                {fromOptions.address && (
-                  <p><strong className="text-gray-700">Address:</strong> <span className="ml-2">{fromData.address}</span></p>
-                )}
-                {fromOptions.udpin && (
-                  <p><strong className="text-gray-700">UDPIN:</strong> <span className="ml-2 font-mono">{fromData.udpin}</span></p>
-                )}
-                {(fromOptions.qrCode || fromOptions.barcode) && (
-                  <div className="flex flex-wrap gap-4 justify-center mt-4">
-                    {fromOptions.qrCode && (
-                      <div className="qr-code text-center">
-                        <img src={generateQrCodeUrl(fromData, 'FROM')} alt="From QR Code" className="w-24 h-24 mx-auto mb-1" />
-                        <p className="text-xs text-gray-600">Scan for location</p>
-                      </div>
-                    )}
-                    {fromOptions.barcode && (
-                      <div className="barcode text-center">
-                        <img src={generateBarcodeUrl(fromData, 'FROM')} alt="From Barcode" className="h-12 mx-auto mb-1 w-32 object-contain" />
-                        <p className="text-xs text-gray-600">Scan barcode</p>
-                      </div>
-                    )}
-                  </div>
-                )}
+              <div className="flex w-full h-full">
+                <div className="flex-shrink-0 flex flex-col items-center justify-center pr-2">
+                  {fromOptions.qrCode && (
+                    <div className="qr-code text-center mb-1">
+                      <img src={generateQrCodeUrl(fromData, 'FROM')} alt="From QR Code" className="w-20 h-20 mx-auto" />
+                      <p className="text-xs text-gray-600">Scan for location</p>
+                    </div>
+                  )}
+                  {fromOptions.barcode && (
+                    <div className="barcode text-center">
+                      <img src={generateBarcodeUrl(fromData, 'FROM')} alt="From Barcode" className="h-10 mx-auto w-28 object-contain" />
+                      <p className="text-xs text-gray-600">Scan barcode</p>
+                    </div>
+                  )}
+                </div>
+                <div className="flex-grow space-y-0.5 text-xs">
+                  {fromOptions.name && (
+                    <p><strong className="text-gray-700">Name:</strong> <span className="ml-1">{fromData.name}</span></p>
+                  )}
+                  {fromOptions.phone && (
+                    <p><strong className="text-gray-700">Phone:</strong> <span className="ml-1">{fromData.phone}</span></p>
+                  )}
+                  {fromOptions.address && (
+                    <p><strong className="text-gray-700">Address:</strong> <span className="ml-1">{fromData.address}</span></p>
+                  )}
+                  {fromOptions.udpin && (
+                    <p><strong className="text-gray-700">UDPIN:</strong> <span className="ml-1 font-mono">{fromData.udpin}</span></p>
+                  )}
+                </div>
               </div>
             ) : (
-              <p className="text-gray-500">No From Address data available. Please set it on the 'From Address' page.</p>
+              <p className="text-gray-500 text-sm">No From Address data available. Please set it on the 'From Address' page.</p>
             )}
           </div>
           
           {/* To Address Slip */}
-          <div className="address-slip to-address-slip p-4">
-            <h4 className="text-lg font-medium text-green-700 mb-3 flex items-center">
-              <FaUser className="mr-2" /> Recipient Information
-            </h4>
+          <div className="address-slip to-address-slip">
             {toData ? (
-              <div className="space-y-2">
-                {toOptions.name && (
-                  <p><strong className="text-gray-700">Name:</strong> <span className="ml-2">{toData.name}</span></p>
-                )}
-                {toOptions.phone && (
-                  <p><strong className="text-gray-700">Phone:</strong> <span className="ml-2">{toData.phone}</span></p>
-                )}
-                {toOptions.address && (
-                  <p><strong className="text-gray-700">Address:</strong> <span className="ml-2">{toData.address}</span></p>
-                )}
-                {toOptions.udpin && (
-                  <p><strong className="text-gray-700">UDPIN:</strong> <span className="ml-2 font-mono">{toData.udpin}</span></p>
-                )}
-                {(toOptions.qrCode || toOptions.barcode) && (
-                  <div className="flex flex-wrap gap-4 justify-center mt-4">
-                    {toOptions.qrCode && (
-                      <div className="qr-code text-center">
-                        <img src={generateQrCodeUrl(toData, 'TO')} alt="To QR Code" className="w-24 h-24 mx-auto mb-1" />
-                        <p className="text-xs text-gray-600">Scan for location</p>
-                      </div>
-                    )}
-                    {toOptions.barcode && (
-                      <div className="barcode text-center">
-                        <img src={generateBarcodeUrl(toData, 'TO')} alt="To Barcode" className="h-12 mx-auto mb-1 w-32 object-contain" />
-                        <p className="text-xs text-gray-600">Scan barcode</p>
-                      </div>
-                    )}
-                  </div>
-                )}
+              <div className="flex w-full h-full">
+                <div className="flex-shrink-0 flex flex-col items-center justify-center pr-2">
+                  {toOptions.qrCode && (
+                    <div className="qr-code text-center mb-1">
+                      <img src={generateQrCodeUrl(toData, 'TO')} alt="To QR Code" className="w-20 h-20 mx-auto" />
+                      <p className="text-xs text-gray-600">Scan for location</p>
+                    </div>
+                  )}
+                  {toOptions.barcode && (
+                    <div className="barcode text-center">
+                      <img src={generateBarcodeUrl(toData, 'TO')} alt="To Barcode" className="h-10 mx-auto w-28 object-contain" />
+                      <p className="text-xs text-gray-600">Scan barcode</p>
+                    </div>
+                  )}
+                </div>
+                <div className="flex-grow space-y-0.5 text-xs">
+                  {toOptions.name && (
+                    <p><strong className="text-gray-700">Name:</strong> <span className="ml-1">{toData.name}</span></p>
+                  )}
+                  {toOptions.phone && (
+                    <p><strong className="text-gray-700">Phone:</strong> <span className="ml-1">{toData.phone}</span></p>
+                  )}
+                  {toOptions.address && (
+                    <p><strong className="text-gray-700">Address:</strong> <span className="ml-1">{toData.address}</span></p>
+                  )}
+                  {toOptions.udpin && (
+                    <p><strong className="text-gray-700">UDPIN:</strong> <span className="ml-1 font-mono">{toData.udpin}</span></p>
+                  )}
+                </div>
               </div>
             ) : (
-              <p className="text-gray-500">No To Address data available. Please set it on the 'To Address' page.</p>
+              <p className="text-gray-500 text-sm">No To Address data available. Please set it on the 'To Address' page.</p>
             )}
           </div>
         </div>

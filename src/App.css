@@ -243,59 +243,87 @@ body {
   .print-layout {
     display: flex;
     flex-direction: column;
-    gap: 20px; /* Space between slips */
-    padding: 20px;
+    gap: 10px; /* Reduced space between slips for 2x4 size */
+    padding: 10px; /* Reduced padding for print layout */
     border: none !important;
     box-shadow: none !important;
     background-color: transparent !important;
   }
 
   .address-slip {
+    width: 4in; /* Set to 4 inches wide */
+    height: 2in; /* Set to 2 inches tall */
+    overflow: hidden; /* Hide content that overflows the fixed size */
+    display: flex; /* Use flexbox for internal layout */
+    align-items: flex-start; /* Align items to the top */
+    justify-content: space-between; /* Space between left and right columns */
     border: 1px solid #ccc;
-    padding: 20px;
-    margin-bottom: 20px; /* Space between slips */
+    padding: 5px; /* Adjusted padding for smaller size */
+    margin-bottom: 10px; /* Space between slips */
     page-break-inside: avoid; /* Avoid breaking a slip across pages */
     background-color: #fff;
     box-shadow: none;
     border-radius: 0;
+    font-size: 0.7em; /* Make font smaller to fit more content */
   }
 
   .address-slip:last-child {
     margin-bottom: 0;
   }
 
-  .address-slip h4 {
-    font-size: 1.2em;
-    margin-bottom: 10px;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 5px;
+  .address-slip h4 { /* This rule is now redundant as h4 is removed from HTML */
+    display: none;
   }
 
-  .address-slip p {
-    font-size: 0.9em;
-    margin-bottom: 5px;
+  .address-slip .flex-shrink-0 { /* Left column for QR/Barcode */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-right: 5px; /* Space between codes and text */
+    flex-basis: 100px; /* Give fixed width for codes */
+    min-width: 100px;
+    max-width: 100px;
+  }
+
+  .address-slip .flex-grow { /* Right column for text details */
+    flex-grow: 1;
+    min-width: 0; /* Allow content to shrink */
+    word-wrap: break-word; /* Ensure long words break */
+    overflow-wrap: break-word;
   }
 
   .address-slip .qr-code,
   .address-slip .barcode {
-    margin-top: 15px;
-    display: inline-block; /* For side-by-side if space allows */
+    margin-top: 0;
+    margin-bottom: 3px; /* Reduced space between QR and barcode */
+    margin-right: 0;
+  }
+
+  .address-slip .qr-code img {
+    width: 70px; /* Smaller QR code to fit */
+    height: 70px;
+  }
+
+  .address-slip .barcode img {
+    width: 90px; /* Smaller barcode to fit */
+    height: 35px; /* Adjusted height */
+  }
+
+  .address-slip p {
+    font-size: 0.9em; /* Adjusted font size for details within the smaller slip */
+    line-height: 1.2; /* Tighter line spacing */
+    margin-bottom: 0; /* Remove default paragraph margin */
+  }
+  .address-slip p strong {
+    display: inline-block; /* Ensure strong doesn't break line */
+    min-width: 45px; /* Align labels */
+    text-align: right;
+    margin-right: 5px;
+  }
+  .address-slip p span {
+    display: inline-block;
     vertical-align: top;
-    margin-right: 15px;
-  }
-
-  .address-slip .qr-code img,
-  .address-slip .barcode img {
-    width: 100px; /* Smaller for print */
-    height: auto;
-  }
-
-  .address-slip .barcode img {
-    height: 50px; /* Smaller for print */
-    width: 150px;
-  }
-
-  .address-slip .flex-wrap {
-    justify-content: flex-start;
+    max-width: calc(100% - 55px); /* Adjust max-width for content */
   }
 }
