@@ -130,7 +130,7 @@ const HomePage = () => {
         const parsedLon = parseFloat(lon);
 
         if (!isNaN(parsedLat) && !isNaN(parsedLon)) {
-          await updateLocationData([parsedLat, parsedLon]);
+          await updateLocationData([parsedLat, parsedLon]); // Corrected call
         } else {
           alert('Received invalid coordinates from search. Please try a different search term.');
           setPosition(initialMapCenter); // Fallback on invalid search result
@@ -215,13 +215,11 @@ const HomePage = () => {
         {/* Map Wrapper */}
         <div className="relative w-full" style={{ minHeight: '24rem', height: '24rem' }}>
           <MapComponent center={position} isLoading={isLoading}>
-            {position && (
-              <Marker
-                position={position}
-              >
-                <Popup>Your location: {address || 'Unknown address'}</Popup>
-              </Marker>
-            )}
+            <Marker
+              position={position}
+            >
+              <Popup>Your location: {address || 'Unknown address'}</Popup>
+            </Marker>
           </MapComponent>
         </div>
 
