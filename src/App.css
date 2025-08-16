@@ -267,11 +267,7 @@ body {
     width: 4in !important; /* Explicitly set width */
     height: 2in !important; /* Explicitly set height */
     overflow: hidden !important; /* Crucial for fixed size */
-    display: flex !important; /* Ensure flex layout */
-    flex-direction: row !important; /* Ensure horizontal layout */
-    flex-wrap: nowrap !important; /* Prevent wrapping of main columns */
-    align-items: flex-start !important; /* Align content to top */
-    justify-content: flex-start !important; /* Align content to start */
+    /* Removed flex properties from here */
     border: 1px solid #ccc !important; /* Make border visible for debugging */
     padding: 3mm !important; /* Consistent padding inside the slip */
     margin-bottom: 0 !important; /* Managed by parent gap */
@@ -280,6 +276,18 @@ body {
     box-shadow: none !important;
     border-radius: 0 !important;
     font-size: 0.7em !important; /* Smaller font for more content */
+    box-sizing: border-box !important;
+  }
+
+  /* Target the inner div that actually contains the two columns */
+  .address-slip > div { /* This targets the div with 'flex w-full h-full' */
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    width: 100% !important; /* Ensure it takes full width of its parent */
+    height: 100% !important; /* Ensure it takes full height of its parent */
+    align-items: flex-start !important; /* Align content to top */
+    justify-content: flex-start !important; /* Align content to start */
     box-sizing: border-box !important;
   }
 
